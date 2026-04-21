@@ -1,5 +1,6 @@
 import os
 
+from ..prompts import TEXT1_ANALYSIS_PROMPT, TEXT2_REPORT_PROMPT
 from ..state import PeptideState
 
 DEFAULT_LLM_MODEL = os.getenv("PEPTIDE_HELPER_MODEL", "gpt-4o-mini")
@@ -67,10 +68,7 @@ def text1_node(state: PeptideState) -> dict:
     print("[Reporter] 📝 Text1: 正在进行初步推演思考...")
     context = state.get("pepcore_context", "")
 
-    prompt = (
-        "你是一个顶级结构生物学家，请分析以下多肽特征数据之间的生物学关联，"
-        f"进行内部推演：\n\n{context}"
-    )
+    prompt = TEXT1_ANALYSIS_PROMPT.format(context=context)
     try:
         analysis = _safe_invoke(prompt)
     except Exception as exc:
@@ -87,10 +85,7 @@ def text2_node(state: PeptideState) -> dict:
     print("[Reporter] 📄 Text2: 正在生成最终交付报告...")
     analysis = state.get("text1_analysis", "")
 
-    prompt = (
-        "你是一个资深医药咨询顾问。请将以下科学推演内容翻译成一篇逻辑严密、"
-        f"排版清晰的 Markdown 评估报告：\n\n{analysis}"
-    )
+    prompt = TEXT2_REPORT_PROMPT.format(analysis=analysis)
     try:
         report = _safe_invoke(prompt)
     except Exception as exc:
