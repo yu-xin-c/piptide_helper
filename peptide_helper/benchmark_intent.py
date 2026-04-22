@@ -1,141 +1,14 @@
+import json
+import os
 from collections import defaultdict
 from contextlib import redirect_stdout
-from dataclasses import dataclass
 from io import StringIO
-from typing import DefaultDict, FrozenSet, Iterable, List, Sequence
+from typing import DefaultDict, Dict, FrozenSet, Iterable, List
 
 from .nodes.planner import planner_node
-from .prompts import BENCHMARK_TEST_PROMPT
-from .state import DEFAULT_REQUIRED_TASKS, create_initial_state
+from .state import create_initial_state
 
 DEFAULT_SEQUENCE = "ACDEFGHIKLMNPQRSTVWY"
-
-
-@dataclass(frozen=True)
-class BenchmarkCase:
-    """单条意图识别评估样本。"""
-
-    name: str
-    category: str
-    user_request: str
-    expected_tasks: FrozenSet[str]
-
-
-def _task_set(*tasks: str) -> FrozenSet[str]:
-    return frozenset(tasks)
-
-
-# 这组样本专门评测 planner 的“路由正确率”，而不是下游 mock 结果。
-# 1. direct_property: 用户直接点名某个性质，考察显式路由。
-# 2. business_goal: 用户给业务目标，planner 需要倒推出应跑哪些子节点。
-# 3. fallback: 用户没有明确目标时，是否走默认路由。
-BENCHMARK_CASES: Sequence[BenchmarkCase] = (
-    BenchmarkCase(
-        name="等电点查询",
-        category="direct_property",
-        user_request="帮我看看这条序列的等电点是多少。",
-        expected_tasks=_task_set("phys_chem_node"),
-    ),
-    BenchmarkCase(
-        name="分子量查询",
-        category="direct_property",
-        user_request="请给我算一下这条多肽的分子量。",
-        expected_tasks=_task_set("phys_chem_node"),
-    ),
-    BenchmarkCase(
-        name="毒性风险评估",
-        category="direct_property",
-        user_request="帮我评估一下这条序列的毒性风险。",
-        expected_tasks=_task_set("toxicity_node"),
-    ),
-    BenchmarkCase(
-        name="抗菌活性评估",
-        category="direct_property",
-        user_request="请判断这条序列有没有抗菌活性。",
-        expected_tasks=_task_set("activity_node"),
-    ),
-    BenchmarkCase(
-        name="稳定性评估",
-        category="direct_property",
-        user_request="我想看一下这条多肽的稳定性表现。",
-        expected_tasks=_task_set("stability_node"),
-    ),
-    BenchmarkCase(
-        name="三维结构预测",
-        category="direct_property",
-        user_request="请给我做一下这条序列的3D结构预测。",
-        expected_tasks=_task_set("esmfold_node"),
-    ),
-    BenchmarkCase(
-        name="显式双任务",
-        category="direct_property",
-        user_request="帮我一起评估抗菌活性和毒性风险。",
-        expected_tasks=_task_set("activity_node", "toxicity_node"),
-    ),
-    BenchmarkCase(
-        name="显式三任务",
-        category="direct_property",
-        user_request="请同时分析理化性质、稳定性和结构。",
-        expected_tasks=_task_set("phys_chem_node", "stability_node", "esmfold_node"),
-    ),
-    BenchmarkCase(
-        name="口服抗癌药评估",
-        category="business_goal",
-        user_request="评估这条序列是否能作为口服的抗癌药。",
-        expected_tasks=_task_set("activity_node", "toxicity_node", "stability_node"),
-    ),
-    BenchmarkCase(
-        name="口服抗菌候选",
-        category="business_goal",
-        user_request="判断这条多肽能不能作为口服抗菌候选分子。",
-        expected_tasks=_task_set("activity_node", "toxicity_node", "stability_node"),
-    ),
-    BenchmarkCase(
-        name="体内给药安全性",
-        category="business_goal",
-        user_request="如果要做体内给药，先帮我看安全性和稳定性。",
-        expected_tasks=_task_set("toxicity_node", "stability_node"),
-    ),
-    BenchmarkCase(
-        name="成药性初判",
-        category="business_goal",
-        user_request="这条序列值不值得往成药方向推进？",
-        expected_tasks=_task_set("activity_node", "toxicity_node", "stability_node"),
-    ),
-    BenchmarkCase(
-        name="构效关系起点",
-        category="business_goal",
-        user_request="我想先看三维构象，再结合活性做构效关系分析。",
-        expected_tasks=_task_set("esmfold_node", "activity_node"),
-    ),
-    BenchmarkCase(
-        name="湿实验前风险筛查",
-        category="business_goal",
-        user_request="上湿实验前，先评估一下毒性和结构风险。",
-        expected_tasks=_task_set("toxicity_node", "esmfold_node"),
-    ),
-    BenchmarkCase(
-        name="没有明确目标的初筛",
-        category="fallback",
-        user_request="先帮我做个初步筛查。",
-        expected_tasks=_task_set(*DEFAULT_REQUIRED_TASKS),
-    ),
-    BenchmarkCase(
-        name="泛化整体判断",
-        category="fallback",
-        user_request="先给我一个整体判断。",
-        expected_tasks=_task_set(*DEFAULT_REQUIRED_TASKS),
-    ),
-    BenchmarkCase(
-        name="信息不足时兜底",
-        category="fallback",
-        user_request="帮我看看这条序列怎么样。",
-        expected_tasks=_task_set(*DEFAULT_REQUIRED_TASKS),
-    ),
-)
-
-
-PROMPT_DESIGN_GUIDE = BENCHMARK_TEST_PROMPT
 
 
 def _predict_tasks(user_request: str) -> FrozenSet[str]:
@@ -152,87 +25,119 @@ def _format_tasks(tasks: Iterable[str]) -> str:
     return ", ".join(ordered_tasks) if ordered_tasks else "(空)"
 
 
-def run_intent_benchmark(cases: Sequence[BenchmarkCase] = BENCHMARK_CASES) -> None:
-    total_cases = len(cases)
-    exact_hits = 0
-    true_positive = 0
-    false_positive = 0
-    false_negative = 0
-    failures: List[str] = []
-    category_stats: DefaultDict[str, dict] = defaultdict(
-        lambda: {"total": 0, "exact_hits": 0}
-    )
-
-    for index, case in enumerate(cases, start=1):
-        predicted_tasks = _predict_tasks(case.user_request)
-        expected_tasks = case.expected_tasks
-        is_exact_hit = predicted_tasks == expected_tasks
-
-        if is_exact_hit:
-            exact_hits += 1
-            category_stats[case.category]["exact_hits"] += 1
-        else:
-            failures.append(
-                f"{index:02d}. {case.name} | category={case.category}\n"
-                f"    request: {case.user_request}\n"
-                f"    expected: {_format_tasks(expected_tasks)}\n"
-                f"    predicted: {_format_tasks(predicted_tasks)}"
-            )
-
-        category_stats[case.category]["total"] += 1
-        true_positive += len(predicted_tasks & expected_tasks)
-        false_positive += len(predicted_tasks - expected_tasks)
-        false_negative += len(expected_tasks - predicted_tasks)
-
-    exact_match_rate = exact_hits / total_cases if total_cases else 0.0
-    precision = (
-        true_positive / (true_positive + false_positive)
-        if (true_positive + false_positive)
-        else 0.0
-    )
-    recall = (
-        true_positive / (true_positive + false_negative)
-        if (true_positive + false_negative)
-        else 0.0
-    )
-    f1 = (
-        2 * precision * recall / (precision + recall)
-        if (precision + recall)
-        else 0.0
-    )
-
-    print("=" * 72)
-    print("Intent Benchmark Result")
-    print("=" * 72)
-    print(f"总样本数: {total_cases}")
-    print(f"严格命中率: {exact_match_rate:.2%} ({exact_hits}/{total_cases})")
-    print(f"任务级 Precision: {precision:.2%}")
-    print(f"任务级 Recall: {recall:.2%}")
-    print(f"任务级 F1: {f1:.2%}")
-    print("-" * 72)
-    print("分类别结果:")
-
-    for category in sorted(category_stats):
-        stats = category_stats[category]
-        category_rate = (
-            stats["exact_hits"] / stats["total"] if stats["total"] else 0.0
-        )
-        print(
-            f"  - {category}: {category_rate:.2%} "
-            f"({stats['exact_hits']}/{stats['total']})"
-        )
-
-    print("-" * 72)
-    print("失败样例:")
-
-    if not failures:
-        print("  - 无")
+def run_scientific_benchmark(dataset_path: str = "peptide_helper/eval_dataset.json") -> None:
+    if not os.path.exists(dataset_path):
+        print(f"找不到数据集文件：{dataset_path}")
         return
 
-    for failure in failures:
-        print(failure)
-        print("-" * 72)
+    with open(dataset_path, "r", encoding="utf-8") as f:
+        dataset = json.load(f)
+
+    total_cases = len(dataset)
+    exact_matches = 0
+
+    # 宏平均 (Macro) 统计：对每个类别计算指标再平均
+    # 微平均 (Micro) 统计：汇总全局的 TP, FP, FN 再计算指标
+    micro_tp = 0
+    micro_fp = 0
+    micro_fn = 0
+    
+    # 汉明损失 (Hamming Loss) 统计
+    total_labels = 5  # 当前共有 5 个可选专家节点
+    total_incorrect_labels = 0
+
+    failures: List[str] = []
+    category_stats: DefaultDict[str, dict] = defaultdict(
+        lambda: {"total": 0, "exact_matches": 0, "tp": 0, "fp": 0, "fn": 0, "incorrect_labels": 0}
+    )
+
+    for item in dataset:
+        case_id = item["id"]
+        category = item["type"]
+        request = item["user_request"]
+        expected = frozenset(item["ground_truth"])
+
+        predicted = _predict_tasks(request)
+
+        tp = len(predicted & expected)
+        fp = len(predicted - expected)
+        fn = len(expected - predicted)
+        
+        incorrect_labels_in_case = fp + fn
+
+        micro_tp += tp
+        micro_fp += fp
+        micro_fn += fn
+        total_incorrect_labels += incorrect_labels_in_case
+
+        category_stats[category]["total"] += 1
+        category_stats[category]["tp"] += tp
+        category_stats[category]["fp"] += fp
+        category_stats[category]["fn"] += fn
+        category_stats[category]["incorrect_labels"] += incorrect_labels_in_case
+
+        is_exact_match = (predicted == expected)
+        if is_exact_match:
+            exact_matches += 1
+            category_stats[category]["exact_matches"] += 1
+        else:
+            failures.append(
+                f"[{case_id}] 类型={category}\n"
+                f"    用户指令: {request}\n"
+                f"    Ground Truth: {_format_tasks(expected)}\n"
+                f"    Predicted   : {_format_tasks(predicted)}\n"
+                f"    [TP={tp}, FP={fp}, FN={fn}]"
+            )
+
+    # 计算全局指标
+    emr = exact_matches / total_cases if total_cases else 0.0
+
+    micro_precision = micro_tp / (micro_tp + micro_fp) if (micro_tp + micro_fp) else 0.0
+    micro_recall = micro_tp / (micro_tp + micro_fn) if (micro_tp + micro_fn) else 0.0
+    micro_f1 = (
+        2 * micro_precision * micro_recall / (micro_precision + micro_recall)
+        if (micro_precision + micro_recall)
+        else 0.0
+    )
+    
+    hamming_loss = total_incorrect_labels / (total_cases * total_labels) if total_cases else 0.0
+
+    print("=" * 80)
+    print("🔬 Planner 多标签分类科研级评测报告 (Multi-label Classification)")
+    print("=" * 80)
+    print(f"数据集样本总数: {total_cases}")
+    print(f"Exact Match Ratio (EMR, 严格命中率): {emr:.2%} ({exact_matches}/{total_cases})")
+    print(f"Hamming Loss (HL, 汉明损失)    : {hamming_loss:.4f} (越接近0越好)")
+    print(f"Micro-Precision: {micro_precision:.2%}")
+    print(f"Micro-Recall: {micro_recall:.2%}")
+    print(f"Micro-F1 Score: {micro_f1:.2%}")
+    print("-" * 80)
+
+    print("📊 细分类别表现 (按 Intent Type):")
+    for category, stats in sorted(category_stats.items()):
+        total = stats["total"]
+        cat_emr = stats["exact_matches"] / total if total else 0.0
+        c_tp, c_fp, c_fn = stats["tp"], stats["fp"], stats["fn"]
+
+        c_p = c_tp / (c_tp + c_fp) if (c_tp + c_fp) else 0.0
+        c_r = c_tp / (c_tp + c_fn) if (c_tp + c_fn) else 0.0
+        c_f1 = 2 * c_p * c_r / (c_p + c_r) if (c_p + c_r) else 0.0
+        c_hl = stats["incorrect_labels"] / (total * total_labels) if total else 0.0
+
+        print(f"  [{category}] 样本数: {total}")
+        print(f"    - EMR: {cat_emr:.2%} ({stats['exact_matches']}/{total})")
+        print(f"    - HL : {c_hl:.4f}")
+        print(f"    - F1 : {c_f1:.2%} (P={c_p:.2%}, R={c_r:.2%})")
+
+    print("-" * 80)
+    print("❌ 错误路由样例分析 (Error Analysis):")
+    if not failures:
+        print("  - 无路由错误，全部精准命中！")
+    else:
+        for failure in failures:
+            print(failure)
+            print("-" * 80)
 
 
 if __name__ == "__main__":
-    run_intent_benchmark()
+    run_scientific_benchmark()

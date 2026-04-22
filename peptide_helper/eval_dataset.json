@@ -1,0 +1,62 @@
+[
+  {
+    "id": "T01",
+    "type": "显式",
+    "user_request": "测一下等电点，然后看看有没有毒。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T02",
+    "type": "隐式-成药性",
+    "user_request": "老板让我评估这条多肽作为口服药的潜力。",
+    "ground_truth": ["toxicity_node", "stability_node"]
+  },
+  {
+    "id": "T03",
+    "type": "隐式-结构依赖",
+    "user_request": "分析它的空间构象是如何影响抗菌能力的。",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T04",
+    "type": "模糊/兜底",
+    "user_request": "跑一下这条序列：ACDEFGH",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T05",
+    "type": "显式",
+    "user_request": "帮我看看这条多肽的疏水性和半衰期。",
+    "ground_truth": ["phys_chem_node", "stability_node"]
+  },
+  {
+    "id": "T06",
+    "type": "显式",
+    "user_request": "请给我做一下3D结构预测，并评估是否有抗病毒活性。",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T07",
+    "type": "隐式-实验前筛查",
+    "user_request": "马上要上小鼠实验了，先帮我把把关排查一下风险。",
+    "ground_truth": ["toxicity_node", "stability_node"]
+  },
+  {
+    "id": "T08",
+    "type": "隐式-优化方向",
+    "user_request": "这条序列容易被酶降解，有什么改造建议？",
+    "ground_truth": ["stability_node", "esmfold_node"]
+  },
+  {
+    "id": "T09",
+    "type": "模糊/兜底",
+    "user_request": "随便帮我分析一下这条序列，看看结果怎么样。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T10",
+    "type": "隐式-靶向药物",
+    "user_request": "评估一下这条序列作为靶向肿瘤细胞候选分子的可行性。",
+    "ground_truth": ["activity_node", "toxicity_node", "stability_node"]
+  }
+]
