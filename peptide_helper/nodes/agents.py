@@ -1,7 +1,9 @@
 import hashlib
+import os
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
+from functools import lru_cache
 
 from ..models import (
     ActivityResult,
@@ -17,6 +19,8 @@ from ..models import (
 from ..state import PeptideState
 
 ESM_ATLAS_FOLD_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
+LOCAL_ESMFOLD_MODEL = os.getenv("PEPTIDE_HELPER_ESMFOLD_MODEL", "facebook/esmfold_v1")
+ESMFOLD_BACKEND = os.getenv("PEPTIDE_HELPER_ESMFOLD_BACKEND", "auto").lower()
 
 
 def _log_agent(agent_name: str) -> None:
@@ -34,6 +38,47 @@ def _fold_sequence_with_esm_atlas(sequence: str) -> tuple[str, str]:
     with urllib.request.urlopen(req, timeout=180) as resp:
         content_type = resp.headers.get("content-type", "")
         return resp.read().decode("utf-8"), content_type
+
+
+def _select_esmfold_device():
+    import torch
+
+    requested_device = os.getenv("PEPTIDE_HELPER_ESMFOLD_DEVICE")
+    if requested_device:
+        return torch.device(requested_device)
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+@lru_cache(maxsize=1)
+def _load_local_esmfold_model():
+    import torch
+    from transformers import EsmForProteinFolding
+
+    device = _select_esmfold_device()
+    model = EsmForProteinFolding.from_pretrained(LOCAL_ESMFOLD_MODEL)
+    model = model.eval().to(device)
+    return model, device
+
+
+def _fold_sequence_with_local_esmfold(sequence: str) -> tuple[str, str]:
+    import torch
+
+    model, _device = _load_local_esmfold_model()
+    with torch.no_grad():
+        pdb_text = model.infer_pdb(sequence)
+    return pdb_text, f"local/esmfold; model={LOCAL_ESMFOLD_MODEL}"
+
+
+def _fold_sequence(sequence: str) -> tuple[str, str]:
+    if ESMFOLD_BACKEND == "http":
+        return _fold_sequence_with_esm_atlas(sequence)
+    if ESMFOLD_BACKEND == "auto":
+        try:
+            return _fold_sequence_with_local_esmfold(sequence)
+        except Exception as exc:
+            print(f"[ESMFold] 本地模型调用失败，回退到 ESM Atlas HTTP: {exc.__class__.__name__}")
+            return _fold_sequence_with_esm_atlas(sequence)
+    return _fold_sequence_with_local_esmfold(sequence)
 
 
 def _normalize_plddt(mean_score: float) -> float:
@@ -155,7 +200,12 @@ def _coordinate_bounds(atom_records: list[PdbAtomRecord]) -> CoordinateBounds | 
     )
 
 
-def _parse_esmfold_pdb(pdb_text: str, sequence: str, content_type: str = "") -> StructureResult:
+def _parse_esmfold_pdb(
+    pdb_text: str,
+    sequence: str,
+    content_type: str = "",
+    source: str = "ESM Atlas",
+) -> StructureResult:
     lines = pdb_text.splitlines()
     record_counts = Counter((line[:6].strip() or "BLANK") for line in lines)
     header = " ".join(line[10:].strip() for line in lines if line.startswith("HEADER"))
@@ -192,6 +242,7 @@ def _parse_esmfold_pdb(pdb_text: str, sequence: str, content_type: str = "") -> 
     return StructureResult(
         pdb_id=_pdb_result_id(sequence),
         confidence=confidence,
+        source=source,
         content_type=content_type,
         sequence_length=len(sequence),
         pdb_line_count=len(lines),
@@ -247,13 +298,14 @@ def esmfold_node(state: PeptideState) -> dict:
     sequence = state.get("sequence", "").strip().upper()
 
     try:
-        pdb_text, content_type = _fold_sequence_with_esm_atlas(sequence)
-        result = _parse_esmfold_pdb(pdb_text, sequence, content_type)
-    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        pdb_text, content_type = _fold_sequence(sequence)
+        source = "Local ESMFold" if content_type.startswith("local/") else "ESM Atlas"
+        result = _parse_esmfold_pdb(pdb_text, sequence, content_type, source)
+    except Exception as exc:
         result = StructureResult(
             pdb_id=_pdb_result_id(sequence or "empty"),
             confidence=0.0,
-            error=f"ESM Atlas 调用失败: {exc.__class__.__name__}",
+            error=f"ESMFold 调用失败: {exc.__class__.__name__}",
         )
 
     return {"structure_res": result}

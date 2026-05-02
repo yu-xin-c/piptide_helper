@@ -1,4 +1,5 @@
 from typing import Iterable, Tuple
+import json
 
 from ..state import PeptideState
 
@@ -15,6 +16,12 @@ def _build_context_sections(state: PeptideState) -> Iterable[str]:
         result = state.get(state_key)
         if result is None:
             continue
+
+        if hasattr(result, "analysis_summary"):
+            payload = result.analysis_summary()
+            yield f"### {title}\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
+            continue
+
         yield f"### {title}\n{result.model_dump_json(indent=2)}"
 
 

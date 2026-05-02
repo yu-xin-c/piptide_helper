@@ -98,3 +98,33 @@ class StructureResult(BaseModel):
     structure_quality: str = ""
     pdb_preview: str = ""
     error: str = ""
+
+    def analysis_summary(self) -> dict:
+        """面向后续 Agent 的结构摘要，避免把全量坐标塞进 LLM 上下文。"""
+
+        return {
+            "pdb_id": self.pdb_id,
+            "confidence": self.confidence,
+            "source": self.source,
+            "content_type": self.content_type,
+            "sequence_length": self.sequence_length,
+            "pdb_line_count": self.pdb_line_count,
+            "pdb_char_count": self.pdb_char_count,
+            "record_counts": self.record_counts,
+            "atom_count": self.atom_count,
+            "residue_count": self.residue_count,
+            "chain_ids": self.chain_ids,
+            "chain_summaries": [item.model_dump() for item in self.chain_summaries],
+            "coordinate_bounds": self.coordinate_bounds.model_dump() if self.coordinate_bounds else None,
+            "min_plddt": self.min_plddt,
+            "max_plddt": self.max_plddt,
+            "high_confidence_residue_count": self.high_confidence_residue_count,
+            "medium_confidence_residue_count": self.medium_confidence_residue_count,
+            "low_confidence_residue_count": self.low_confidence_residue_count,
+            "very_low_confidence_residue_count": self.very_low_confidence_residue_count,
+            "per_residue_plddt": [item.model_dump() for item in self.per_residue_plddt],
+            "low_confidence_residues": [item.model_dump() for item in self.low_confidence_residues],
+            "low_confidence_regions": [item.model_dump() for item in self.low_confidence_regions],
+            "structure_quality": self.structure_quality,
+            "error": self.error,
+        }
