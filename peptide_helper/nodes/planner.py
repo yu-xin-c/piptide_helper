@@ -9,11 +9,78 @@ from ..state import DEFAULT_REQUIRED_TASKS, PeptideState
 DEFAULT_LLM_MODEL = os.getenv("PEPTIDE_HELPER_MODEL", "gpt-4o-mini")
 
 TASK_KEYWORDS: Dict[str, List[str]] = {
-    "phys_chem_node": ["理化"],
-    "toxicity_node": ["毒性"],
-    "activity_node": ["活性", "抗菌"],
-    "stability_node": ["稳定"],
-    "esmfold_node": ["结构", "3D"],
+    "phys_chem_node": [
+        "理化",
+        "分子量",
+        "等电点",
+        "pi",
+        "pI",
+        "溶解度",
+        "疏水",
+        "亲水",
+        "电荷",
+        "净电荷",
+        "氨基酸组成",
+        "组成",
+        "脂溶",
+        "性质",
+        "参数",
+    ],
+    "toxicity_node": [
+        "毒性",
+        "毒理",
+        "有毒",
+        "无毒",
+        "毒副",
+        "毒害",
+        "安全",
+        "风险",
+        "溶血",
+        "细胞毒",
+        "免疫原",
+        "致敏",
+        "副作用",
+        "不良反应",
+        "耐受",
+        "小鼠",
+        "动物实验",
+        "湿实验",
+        "临床前",
+        "把关",
+        "筛查",
+    ],
+    "activity_node": [
+        "活性",
+        "抗菌",
+        "抗肿瘤",
+        "抗癌",
+        "抗病毒",
+        "杀菌",
+        "抑菌",
+        "免疫调节",
+        "靶向",
+        "药效",
+        "MIC",
+        "病原",
+        "金黄色葡萄球菌",
+        "杀伤",
+        "抑制",
+    ],
+    "esmfold_node": [
+        "结构",
+        "3D",
+        "三维",
+        "构象",
+        "折叠",
+        "二级结构",
+        "三级结构",
+        "空间",
+        "PDB",
+        "ESMFold",
+        "螺旋",
+        "beta",
+        "β",
+    ],
 }
 
 VALID_NODES = set(TASK_KEYWORDS.keys())
@@ -54,10 +121,28 @@ def _parse_json_response(text: str) -> List[str]:
 
 def _keyword_fallback(request: str) -> List[str]:
     # 原有关键词规则，作为 LLM 不可用时的降级方案
+    normalized_request = request.lower()
     tasks: List[str] = []
     for task_name, keywords in TASK_KEYWORDS.items():
-        if any(keyword in request for keyword in keywords):
+        if any(keyword.lower() in normalized_request for keyword in keywords):
             tasks.append(task_name)
+
+    drug_development_terms = ("成药", "候选药", "候选分子", "开发价值", "药物潜力", "先导", "可行性")
+    if any(term in request for term in drug_development_terms):
+        for task_name in ("activity_node", "toxicity_node"):
+            if task_name not in tasks:
+                tasks.append(task_name)
+
+    early_screen_terms = ("初筛", "预筛", "快速筛", "第一轮筛选")
+    if any(term in request for term in early_screen_terms):
+        for task_name in DEFAULT_REQUIRED_TASKS:
+            if task_name not in tasks:
+                tasks.append(task_name)
+
+    design_terms = ("优化", "改造", "设计建议", "突变建议")
+    if any(term in request for term in design_terms) and "esmfold_node" not in tasks:
+        tasks.append("esmfold_node")
+
     return tasks or list(DEFAULT_REQUIRED_TASKS)
 
 

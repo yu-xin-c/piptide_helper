@@ -3,7 +3,6 @@ from .agents import (
     phys_chem_node,
     toxicity_node,
     activity_node,
-    stability_node,
     esmfold_node
 )
 from .pepcore import pepcore_node
@@ -14,7 +13,6 @@ __all__ = [
     "phys_chem_node",
     "toxicity_node",
     "activity_node",
-    "stability_node",
     "esmfold_node",
     "pepcore_node",
     "text1_node",

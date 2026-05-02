@@ -8,7 +8,6 @@ from .nodes import (
     pepcore_node,
     phys_chem_node,
     planner_node,
-    stability_node,
     text1_node,
     text2_node,
     toxicity_node,
@@ -19,7 +18,6 @@ EXPERT_NODES: Dict[str, object] = {
     "phys_chem_node": phys_chem_node,
     "toxicity_node": toxicity_node,
     "activity_node": activity_node,
-    "stability_node": stability_node,
     "esmfold_node": esmfold_node,
 }
 

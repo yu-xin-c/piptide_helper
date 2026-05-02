@@ -3,7 +3,6 @@ from typing import List, Optional, TypedDict
 from .models import (
     ActivityResult,
     PhysChemResult,
-    StabilityResult,
     StructureResult,
     ToxicityResult,
 )
@@ -22,7 +21,6 @@ class PeptideState(TypedDict, total=False):
     phys_chem_res: Optional[PhysChemResult]
     toxicity_res: Optional[ToxicityResult]
     activity_res: Optional[ActivityResult]
-    stability_res: Optional[StabilityResult]
     structure_res: Optional[StructureResult]
 
     # 核心处理与报告流转结果
@@ -41,7 +39,6 @@ def create_initial_state(sequence: str, user_request: str) -> PeptideState:
         "phys_chem_res": None,
         "toxicity_res": None,
         "activity_res": None,
-        "stability_res": None,
         "structure_res": None,
         "pepcore_context": "",
         "text1_analysis": "",

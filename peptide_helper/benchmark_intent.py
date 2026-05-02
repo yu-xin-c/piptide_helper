@@ -43,7 +43,7 @@ def run_scientific_benchmark(dataset_path: str = "peptide_helper/eval_dataset.js
     micro_fn = 0
     
     # 汉明损失 (Hamming Loss) 统计
-    total_labels = 5  # 当前共有 5 个可选专家节点
+    total_labels = 4  # 当前共有 4 个可选专家节点
     total_incorrect_labels = 0
 
     failures: List[str] = []

@@ -1,7 +1,6 @@
 from ..models import (
     ActivityResult,
     PhysChemResult,
-    StabilityResult,
     StructureResult,
     ToxicityResult,
 )
@@ -27,11 +26,6 @@ def toxicity_node(_state: PeptideState) -> dict:
 def activity_node(_state: PeptideState) -> dict:
     _log_agent("⚔️ 活性专家")
     return {"activity_res": ActivityResult(antimicrobial_score=0.88)}
-
-
-def stability_node(_state: PeptideState) -> dict:
-    _log_agent("🛡️ 稳定性专家")
-    return {"stability_res": StabilityResult(half_life_hours=12.5)}
 
 
 def esmfold_node(_state: PeptideState) -> dict:

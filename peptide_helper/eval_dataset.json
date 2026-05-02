@@ -1,62 +1,782 @@
 [
   {
-    "id": "T01",
-    "type": "显式",
+    "id": "T001",
+    "type": "显式-理化",
+    "user_request": "测一下这条多肽的分子量和等电点。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T002",
+    "type": "显式-理化",
+    "user_request": "帮我算一下净电荷和疏水性。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T003",
+    "type": "显式-理化",
+    "user_request": "看看这条序列的溶解度和氨基酸组成。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T004",
+    "type": "显式-理化",
+    "user_request": "给我一个基础理化性质概览。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T005",
+    "type": "显式-理化",
+    "user_request": "估算一下 pI 和脂溶性参数。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T006",
+    "type": "显式-理化",
+    "user_request": "这条肽的亲水性和电荷分布怎么样？",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T007",
+    "type": "显式-理化",
+    "user_request": "请输出分子量、等电点和净电荷。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T008",
+    "type": "显式-理化",
+    "user_request": "我只想先看一下理化参数。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T009",
+    "type": "显式-理化",
+    "user_request": "分析一下疏水残基比例和整体性质。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T010",
+    "type": "显式-理化",
+    "user_request": "这条序列的氨基酸组成有没有偏碱性？",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T011",
+    "type": "显式-毒性",
+    "user_request": "看看这条多肽有没有毒性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T012",
+    "type": "显式-毒性",
+    "user_request": "评估一下安全性和副作用风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T013",
+    "type": "显式-毒性",
+    "user_request": "帮我检查溶血性风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T014",
+    "type": "显式-毒性",
+    "user_request": "判断是否可能有细胞毒性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T015",
+    "type": "显式-毒性",
+    "user_request": "看一下免疫原性和致敏性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T016",
+    "type": "显式-毒性",
+    "user_request": "这条序列的不良反应风险高不高？",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T017",
+    "type": "显式-毒性",
+    "user_request": "先做毒理安全初步判断。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T018",
+    "type": "显式-毒性",
+    "user_request": "小鼠实验前帮我排查安全风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T019",
+    "type": "显式-毒性",
+    "user_request": "临床前阶段先把毒性把关一下。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T020",
+    "type": "显式-毒性",
+    "user_request": "看一下动物实验耐受风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T021",
+    "type": "显式-活性",
+    "user_request": "评估这条多肽的抗菌活性。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T022",
+    "type": "显式-活性",
+    "user_request": "看看它有没有抗病毒活性。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T023",
+    "type": "显式-活性",
+    "user_request": "判断一下抗肿瘤药效潜力。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T024",
+    "type": "显式-活性",
+    "user_request": "它对金黄色葡萄球菌可能有抑菌效果吗？",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T025",
+    "type": "显式-活性",
+    "user_request": "帮我预测杀菌能力。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T026",
+    "type": "显式-活性",
+    "user_request": "这条序列有没有免疫调节作用？",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T027",
+    "type": "显式-活性",
+    "user_request": "分析一下靶向活性和药效。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T028",
+    "type": "显式-活性",
+    "user_request": "估计一下 MIC 相关表现。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T029",
+    "type": "显式-活性",
+    "user_request": "它对病原菌有没有抑制能力？",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T030",
+    "type": "显式-活性",
+    "user_request": "预测它对癌细胞的杀伤潜力。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T031",
+    "type": "显式-结构",
+    "user_request": "请做一下 3D 结构预测。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T032",
+    "type": "显式-结构",
+    "user_request": "分析这条多肽的三维构象。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T033",
+    "type": "显式-结构",
+    "user_request": "看看空间折叠大概是什么样。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T034",
+    "type": "显式-结构",
+    "user_request": "预测二级结构和三级结构。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T035",
+    "type": "显式-结构",
+    "user_request": "用 ESMFold 帮我看一下构象。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T036",
+    "type": "显式-结构",
+    "user_request": "给我一个 PDB 结构预测结果。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T037",
+    "type": "显式-结构",
+    "user_request": "这条肽会不会形成螺旋结构？",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T038",
+    "type": "显式-结构",
+    "user_request": "看看有没有 beta 折叠倾向。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T039",
+    "type": "显式-结构",
+    "user_request": "先把空间构型预测出来。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T040",
+    "type": "显式-结构",
+    "user_request": "我需要这条序列的结构预测。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T041",
+    "type": "组合-理化毒性",
     "user_request": "测一下等电点，然后看看有没有毒。",
     "ground_truth": ["phys_chem_node", "toxicity_node"]
   },
   {
-    "id": "T02",
+    "id": "T042",
+    "type": "组合-理化毒性",
+    "user_request": "先看分子量和安全性。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T043",
+    "type": "组合-理化毒性",
+    "user_request": "帮我评估疏水性以及溶血风险。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T044",
+    "type": "组合-理化毒性",
+    "user_request": "给出净电荷，并判断细胞毒性。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T045",
+    "type": "组合-理化毒性",
+    "user_request": "分析理化性质和免疫原性。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T046",
+    "type": "组合-活性毒性",
+    "user_request": "评估抗菌活性，同时确认有没有毒性。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T047",
+    "type": "组合-活性毒性",
+    "user_request": "看抗病毒药效和安全性。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T048",
+    "type": "组合-活性毒性",
+    "user_request": "抗癌潜力和副作用风险都评一下。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T049",
+    "type": "组合-活性毒性",
+    "user_request": "预测抑菌能力并排查溶血性。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T050",
+    "type": "组合-活性毒性",
+    "user_request": "靶向活性和不良反应风险一起看。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T051",
+    "type": "组合-活性结构",
+    "user_request": "分析空间构象如何影响抗菌能力。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T052",
+    "type": "组合-活性结构",
+    "user_request": "做 3D 结构预测，并评估抗病毒活性。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T053",
+    "type": "组合-活性结构",
+    "user_request": "看看折叠形态和抗肿瘤效果有没有关系。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T054",
+    "type": "组合-活性结构",
+    "user_request": "预测结构，同时判断杀菌能力。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T055",
+    "type": "组合-活性结构",
+    "user_request": "我想看构效关系，尤其是结构和药效。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T056",
+    "type": "组合-理化结构",
+    "user_request": "给出分子量，并做三维构象预测。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T057",
+    "type": "组合-理化结构",
+    "user_request": "先看净电荷，再看看空间折叠。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T058",
+    "type": "组合-理化结构",
+    "user_request": "疏水性和二级结构都帮我分析一下。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T059",
+    "type": "组合-理化结构",
+    "user_request": "计算等电点，并预测 PDB 结构。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T060",
+    "type": "组合-理化结构",
+    "user_request": "看氨基酸组成和螺旋结构倾向。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T061",
+    "type": "组合-毒性结构",
+    "user_request": "预测结构，同时看看安全风险。",
+    "ground_truth": ["toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T062",
+    "type": "组合-毒性结构",
+    "user_request": "分析三维构象和潜在毒性。",
+    "ground_truth": ["toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T063",
+    "type": "组合-毒性结构",
+    "user_request": "看空间折叠是否提示溶血风险。",
+    "ground_truth": ["toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T064",
+    "type": "组合-毒性结构",
+    "user_request": "结构预测后顺便排查细胞毒性。",
+    "ground_truth": ["toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T065",
+    "type": "组合-毒性结构",
+    "user_request": "用 ESMFold 看构象，并评估免疫原性。",
+    "ground_truth": ["toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T066",
+    "type": "组合-三节点",
+    "user_request": "给我分子量、抗菌活性和毒性风险。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T067",
+    "type": "组合-三节点",
+    "user_request": "分析等电点、抗病毒活性和安全性。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T068",
+    "type": "组合-三节点",
+    "user_request": "看疏水性、药效以及副作用风险。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T069",
+    "type": "组合-三节点",
+    "user_request": "评估抗肿瘤效果、溶血性和净电荷。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T070",
+    "type": "组合-三节点",
+    "user_request": "看看抑菌能力、免疫原性和氨基酸组成。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T071",
+    "type": "组合-三节点",
+    "user_request": "做结构预测，顺便算分子量和电荷。",
+    "ground_truth": ["phys_chem_node", "esmfold_node"]
+  },
+  {
+    "id": "T072",
+    "type": "组合-三节点",
+    "user_request": "看 3D 构象、抗菌活性和毒性。",
+    "ground_truth": ["esmfold_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T073",
+    "type": "组合-三节点",
+    "user_request": "预测三维结构、抗癌潜力和安全性。",
+    "ground_truth": ["esmfold_node", "activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T074",
+    "type": "组合-三节点",
+    "user_request": "分析构象、疏水性和抗病毒活性。",
+    "ground_truth": ["esmfold_node", "phys_chem_node", "activity_node"]
+  },
+  {
+    "id": "T075",
+    "type": "组合-三节点",
+    "user_request": "看空间折叠、等电点和细胞毒性。",
+    "ground_truth": ["esmfold_node", "phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T076",
+    "type": "组合-全节点",
+    "user_request": "完整看一下分子量、抗菌活性、毒性和 3D 结构。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T077",
+    "type": "组合-全节点",
+    "user_request": "给我理化性质、安全性、药效和空间构象。",
+    "ground_truth": ["phys_chem_node", "toxicity_node", "activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T078",
+    "type": "组合-全节点",
+    "user_request": "我需要等电点、抗病毒活性、溶血风险和结构预测。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T079",
+    "type": "组合-全节点",
+    "user_request": "把疏水性、抗癌药效、不良反应和三维构象都跑一下。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T080",
+    "type": "组合-全节点",
+    "user_request": "综合评估：理化参数、靶向活性、安全风险、PDB 结构。",
+    "ground_truth": ["phys_chem_node", "activity_node", "toxicity_node", "esmfold_node"]
+  },
+  {
+    "id": "T081",
     "type": "隐式-成药性",
-    "user_request": "老板让我评估这条多肽作为口服药的潜力。",
-    "ground_truth": ["toxicity_node", "stability_node"]
+    "user_request": "老板让我评估这条多肽作为候选药的开发价值。",
+    "ground_truth": ["activity_node", "toxicity_node"]
   },
   {
-    "id": "T03",
-    "type": "隐式-结构依赖",
-    "user_request": "分析它的空间构象是如何影响抗菌能力的。",
-    "ground_truth": ["esmfold_node", "activity_node"]
+    "id": "T082",
+    "type": "隐式-成药性",
+    "user_request": "判断一下它有没有成药性。",
+    "ground_truth": ["activity_node", "toxicity_node"]
   },
   {
-    "id": "T04",
-    "type": "模糊/兜底",
-    "user_request": "跑一下这条序列：ACDEFGH",
-    "ground_truth": ["phys_chem_node", "toxicity_node"]
+    "id": "T083",
+    "type": "隐式-成药性",
+    "user_request": "这条序列作为先导化合物可行性如何？",
+    "ground_truth": ["activity_node", "toxicity_node"]
   },
   {
-    "id": "T05",
-    "type": "显式",
-    "user_request": "帮我看看这条多肽的疏水性和半衰期。",
-    "ground_truth": ["phys_chem_node", "stability_node"]
+    "id": "T084",
+    "type": "隐式-成药性",
+    "user_request": "帮我看它作为候选分子的药物潜力。",
+    "ground_truth": ["activity_node", "toxicity_node"]
   },
   {
-    "id": "T06",
-    "type": "显式",
-    "user_request": "请给我做一下3D结构预测，并评估是否有抗病毒活性。",
-    "ground_truth": ["esmfold_node", "activity_node"]
-  },
-  {
-    "id": "T07",
-    "type": "隐式-实验前筛查",
-    "user_request": "马上要上小鼠实验了，先帮我把把关排查一下风险。",
-    "ground_truth": ["toxicity_node", "stability_node"]
-  },
-  {
-    "id": "T08",
-    "type": "隐式-优化方向",
-    "user_request": "这条序列容易被酶降解，有什么改造建议？",
-    "ground_truth": ["stability_node", "esmfold_node"]
-  },
-  {
-    "id": "T09",
-    "type": "模糊/兜底",
-    "user_request": "随便帮我分析一下这条序列，看看结果怎么样。",
-    "ground_truth": ["phys_chem_node", "toxicity_node"]
-  },
-  {
-    "id": "T10",
+    "id": "T085",
     "type": "隐式-靶向药物",
-    "user_request": "评估一下这条序列作为靶向肿瘤细胞候选分子的可行性。",
-    "ground_truth": ["activity_node", "toxicity_node", "stability_node"]
+    "user_request": "评估这条序列作为靶向肿瘤细胞候选分子的可行性。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T086",
+    "type": "隐式-实验前筛查",
+    "user_request": "马上要上湿实验了，先帮我把把关排查一下风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T087",
+    "type": "隐式-实验前筛查",
+    "user_request": "动物实验前先做一下安全把关。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T088",
+    "type": "隐式-实验前筛查",
+    "user_request": "临床前推进前帮我排查风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T089",
+    "type": "隐式-实验前筛查",
+    "user_request": "准备做小鼠实验，先确认耐受问题。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T090",
+    "type": "隐式-结构依赖",
+    "user_request": "我怀疑折叠方式决定了抗菌效果，帮我验证。",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T091",
+    "type": "隐式-结构依赖",
+    "user_request": "想看空间构象是否解释抗病毒药效。",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T092",
+    "type": "隐式-优化方向",
+    "user_request": "给这条序列一些改造建议，重点看构象。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T093",
+    "type": "隐式-优化方向",
+    "user_request": "从结构角度看有没有优化空间？",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T094",
+    "type": "隐式-优化方向",
+    "user_request": "想优化抗菌效果，先看结构和活性。",
+    "ground_truth": ["activity_node", "esmfold_node"]
+  },
+  {
+    "id": "T095",
+    "type": "隐式-快速筛选",
+    "user_request": "先做一个初筛，不用太复杂。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T096",
+    "type": "隐式-快速筛选",
+    "user_request": "第一轮筛选先跑基础项。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T097",
+    "type": "模糊-兜底",
+    "user_request": "跑一下这条序列：ACDEFGH。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T098",
+    "type": "模糊-兜底",
+    "user_request": "随便帮我分析一下这条序列。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T099",
+    "type": "模糊-兜底",
+    "user_request": "看看这条肽整体怎么样。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T100",
+    "type": "模糊-兜底",
+    "user_request": "帮我出一个初步结果。",
+    "ground_truth": ["phys_chem_node", "toxicity_node"]
+  },
+  {
+    "id": "T101",
+    "type": "困难-排除意图",
+    "user_request": "只看毒性，不要做结构预测。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T102",
+    "type": "困难-排除意图",
+    "user_request": "只要分子量，暂时不要评估活性和毒性。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T103",
+    "type": "困难-排除意图",
+    "user_request": "别跑 3D，先看抗菌活性。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T104",
+    "type": "困难-否定干扰",
+    "user_request": "不是抗菌项目，我只想算等电点。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T105",
+    "type": "困难-排除意图",
+    "user_request": "不用看安全性，重点评估抗癌活性。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T106",
+    "type": "困难-否定干扰",
+    "user_request": "如果不考虑毒性，这条序列的结构如何？",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T107",
+    "type": "困难-排除意图",
+    "user_request": "先不要生成 PDB，只评价溶血风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T108",
+    "type": "困难-排除意图",
+    "user_request": "不做理化，只看 3D 结构和抗病毒活性。",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T109",
+    "type": "困难-排除意图",
+    "user_request": "先别看药效，帮我确认免疫原性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T110",
+    "type": "困难-排除意图",
+    "user_request": "无需小鼠安全评估，计算净电荷。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T111",
+    "type": "困难-英文缩写",
+    "user_request": "Calculate MW and net charge.",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T112",
+    "type": "困难-英文缩写",
+    "user_request": "Check hemolysis and cytotoxicity risk.",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T113",
+    "type": "困难-英文缩写",
+    "user_request": "Predict 3D fold and PDB confidence.",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T114",
+    "type": "困难-英文缩写",
+    "user_request": "Estimate MIC against bacteria.",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T115",
+    "type": "困难-英文缩写",
+    "user_request": "SAR: structure vs activity relationship.",
+    "ground_truth": ["esmfold_node", "activity_node"]
+  },
+  {
+    "id": "T116",
+    "type": "困难-已移除能力",
+    "user_request": "我只问半衰期，不需要其他分析。",
+    "ground_truth": []
+  },
+  {
+    "id": "T117",
+    "type": "困难-已移除能力",
+    "user_request": "这条肽容易被酶降解吗？现在没有稳定性模块就别派其他专家。",
+    "ground_truth": []
+  },
+  {
+    "id": "T118",
+    "type": "困难-已移除能力",
+    "user_request": "口服稳定性先不要做，帮我看毒性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T119",
+    "type": "困难-已移除能力",
+    "user_request": "热稳定性不用评估，只看分子量。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T120",
+    "type": "困难-已移除能力",
+    "user_request": "代谢稳定性先忽略，做 3D 结构。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T121",
+    "type": "困难-隐式限定",
+    "user_request": "是否值得推进？不要泛泛分析，先看成药性里最关键的药效和安全。",
+    "ground_truth": ["activity_node", "toxicity_node"]
+  },
+  {
+    "id": "T122",
+    "type": "困难-隐式限定",
+    "user_request": "候选分子但这轮只看结构，不看活性毒性。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T123",
+    "type": "困难-隐式限定",
+    "user_request": "初筛只要基础理化，安全性后面再说。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T124",
+    "type": "困难-排除意图",
+    "user_request": "做一轮快速筛选，但排除毒性，只看分子量和 pI。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T125",
+    "type": "困难-排除意图",
+    "user_request": "构效关系里先不看结构，只看抗菌活性。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T126",
+    "type": "困难-否定干扰",
+    "user_request": "3D 不是重点，主要确认细胞毒性。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T127",
+    "type": "困难-否定干扰",
+    "user_request": "别做抗菌预测；我只是问这条肽会不会形成螺旋。",
+    "ground_truth": ["esmfold_node"]
+  },
+  {
+    "id": "T128",
+    "type": "困难-排除意图",
+    "user_request": "先看疏水性，毒性和结构都不要。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T129",
+    "type": "困难-否定干扰",
+    "user_request": "请不要评估免疫调节，只做溶解度。",
+    "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T130",
+    "type": "困难-语义歧义",
+    "user_request": "我说的活性不是生物活性，是化学活度；这里先算电荷。",
+    "ground_truth": ["phys_chem_node"]
   }
 ]
