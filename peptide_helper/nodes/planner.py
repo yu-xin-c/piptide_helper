@@ -6,6 +6,9 @@ from typing import Dict, List
 from ..prompts import PLANNER_INTENT_PROMPT
 from ..state import DEFAULT_REQUIRED_TASKS, PeptideState
 
+# 标准氨基酸单字母代码集合
+_AMINO_ACIDS = set("ACDEFGHIKLMNPQRSTVWY")
+
 DEFAULT_LLM_MODEL = os.getenv("PEPTIDE_HELPER_MODEL", "gpt-4o-mini")
 
 TASK_KEYWORDS: Dict[str, List[str]] = {
@@ -86,6 +89,62 @@ TASK_KEYWORDS: Dict[str, List[str]] = {
 VALID_NODES = set(TASK_KEYWORDS.keys())
 
 
+def _extract_sequences(text: str) -> List[str]:
+    """从用户输入中提取多肽序列。
+
+    支持的格式：
+    - 纯大写氨基酸字符串（长度 >= 2，>= 80% 为标准氨基酸）
+    - FASTA 格式（>header 行 + 序列行）
+    - 逗号/空格/换行分隔的多条序列
+    """
+    candidates: List[str] = []
+
+    # 1. 处理 FASTA 格式：按 > 分割
+    if ">" in text:
+        fasta_blocks = re.split(r"^>", text, flags=re.MULTILINE)
+        for block in fasta_blocks:
+            block = block.strip()
+            if not block:
+                continue
+            # 去掉 header 行
+            lines = block.splitlines()
+            seq_lines = [line.strip() for line in lines[1:] if line.strip() and not line.startswith("#")]
+            seq = "".join(seq_lines).upper()
+            seq = re.sub(r"[^ACDEFGHIKLMNPQRSTVWY]", "", seq)
+            if len(seq) >= 2:
+                candidates.append(seq)
+        return candidates
+
+    # 2. 非 FASTA：尝试从文本中提取连续氨基酸字符串
+    # 先按常见分隔符拆分
+    tokens = re.split(r"[,;，；\s]+", text)
+
+    for token in tokens:
+        token = token.strip().upper()
+        if not token:
+            continue
+        # 去除明显的非序列词（含数字、太多非标准字符等）
+        if re.search(r"\d", token):
+            continue
+        # 计算标准氨基酸比例
+        aa_count = sum(1 for ch in token if ch in _AMINO_ACIDS)
+        if len(token) >= 2 and aa_count / len(token) >= 0.8:
+            # 清洗为纯氨基酸序列
+            clean = "".join(ch for ch in token if ch in _AMINO_ACIDS)
+            if len(clean) >= 2:
+                candidates.append(clean)
+
+    # 去重保序
+    seen = set()
+    unique = []
+    for seq in candidates:
+        if seq not in seen:
+            seen.add(seq)
+            unique.append(seq)
+
+    return unique
+
+
 def _get_llm():
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -149,10 +208,32 @@ def _keyword_fallback(request: str) -> List[str]:
 def planner_node(state: PeptideState) -> dict:
     """
     意图识别与任务分发节点（LLM 路由 + 关键词兜底）
-    优先通过 LLM 理解用户意图并路由到正确节点，
-    LLM 不可用或解析失败时降级到关键词规则。
+    1. 从用户输入中提取多肽序列列表
+    2. 通过 LLM / 关键词规则确定需要调用的专家节点
     """
     request = state.get("user_request", "")
+    existing_sequences = state.get("sequences", [])
+    existing_single = state.get("sequence", "")
+
+    # --- 提取序列 ---
+    extracted = _extract_sequences(request)
+
+    # 合并：已有的 sequences + 提取的 + 单条 sequence
+    merged = list(existing_sequences)
+    if existing_single and existing_single not in merged:
+        merged.insert(0, existing_single)
+    for seq in extracted:
+        if seq not in merged:
+            merged.append(seq)
+
+    # 如果仍然没有序列，尝试把整个 user_request 当作序列清洗
+    if not merged:
+        from .agents import _clean_sequence
+        cleaned = _clean_sequence(request)
+        if len(cleaned) >= 2:
+            merged.append(cleaned)
+
+    # --- 任务路由 ---
     tasks: List[str] = []
     used_llm = False
 
@@ -171,6 +252,11 @@ def planner_node(state: PeptideState) -> dict:
 
     source = "LLM" if used_llm else "关键词兜底"
     print(f"[Planner] 🧠 分析用户需求: '{request}'")
+    print(f"[Planner] 🧬 识别到 {len(merged)} 条多肽序列: {merged}")
     print(f"[Planner] 🎯 分配专家任务: {tasks} (来源: {source})")
 
-    return {"required_tasks": tasks}
+    return {
+        "sequences": merged,
+        "sequence": merged[0] if merged else existing_single,  # 向后兼容
+        "required_tasks": tasks,
+    }

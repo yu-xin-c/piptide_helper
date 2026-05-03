@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -104,13 +106,14 @@ class StructureResult(BaseModel):
     residue_count: int = 0
     chain_ids: list[str] = Field(default_factory=list)
     chain_summaries: list[ChainStructureSummary] = Field(default_factory=list)
-    coordinate_bounds: CoordinateBounds | None = None
+    coordinate_bounds: Optional[CoordinateBounds] = None
     min_plddt: float = 0.0
     max_plddt: float = 0.0
     high_confidence_residue_count: int = 0
     medium_confidence_residue_count: int = 0
     low_confidence_residue_count: int = 0
     very_low_confidence_residue_count: int = 0
+    confident_fraction: float = 0.0
     per_residue_plddt: list[ResidueConfidence] = Field(default_factory=list)
     low_confidence_residues: list[ResidueConfidence] = Field(default_factory=list)
     low_confidence_regions: list[LowConfidenceRegion] = Field(default_factory=list)
@@ -142,9 +145,19 @@ class StructureResult(BaseModel):
             "medium_confidence_residue_count": self.medium_confidence_residue_count,
             "low_confidence_residue_count": self.low_confidence_residue_count,
             "very_low_confidence_residue_count": self.very_low_confidence_residue_count,
+            "confident_fraction": self.confident_fraction,
             "per_residue_plddt": [item.model_dump() for item in self.per_residue_plddt],
             "low_confidence_residues": [item.model_dump() for item in self.low_confidence_residues],
             "low_confidence_regions": [item.model_dump() for item in self.low_confidence_regions],
             "structure_quality": self.structure_quality,
             "error": self.error,
         }
+
+
+class SequenceAnalysis(BaseModel):
+    """单条多肽序列的分析结果集合"""
+    sequence: str
+    phys_chem_res: Optional[PhysChemResult] = None
+    toxicity_res: Optional[ToxicityResult] = None
+    activity_res: Optional[ActivityResult] = None
+    structure_res: Optional[StructureResult] = None
