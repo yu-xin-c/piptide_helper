@@ -1,5 +1,19 @@
 from pydantic import BaseModel, Field
 
+
+class ModelEvidence(BaseModel):
+    """单个模型的标准化证据。"""
+
+    name: str
+    task: str
+    label: str = "unknown"
+    score: float | None = None
+    weight: float = 1.0
+    status: str = "available"
+    source: str = ""
+    error: str = ""
+
+
 class PhysChemResult(BaseModel):
     """理化性质返回结果模型"""
     mw: float
@@ -9,10 +23,16 @@ class ToxicityResult(BaseModel):
     """毒性预测返回结果模型"""
     is_toxic: bool
     score: float
+    consensus_level: str = "insufficient_models"
+    evidence_summary: str = ""
+    model_results: list[ModelEvidence] = Field(default_factory=list)
 
 class ActivityResult(BaseModel):
     """活性评估返回结果模型"""
     antimicrobial_score: float
+    consensus_level: str = "insufficient_models"
+    evidence_summary: str = ""
+    model_results: list[ModelEvidence] = Field(default_factory=list)
 
 
 class PdbAtomRecord(BaseModel):

@@ -1,5 +1,8 @@
 import hashlib
+import json
 import os
+import shlex
+import subprocess
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
@@ -10,6 +13,7 @@ from ..models import (
     ChainStructureSummary,
     CoordinateBounds,
     LowConfidenceRegion,
+    ModelEvidence,
     PdbAtomRecord,
     PhysChemResult,
     ResidueConfidence,
@@ -21,12 +25,232 @@ from ..state import PeptideState
 ESM_ATLAS_FOLD_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
 LOCAL_ESMFOLD_MODEL = os.getenv("PEPTIDE_HELPER_ESMFOLD_MODEL", "facebook/esmfold_v1")
 ESMFOLD_BACKEND = os.getenv("PEPTIDE_HELPER_ESMFOLD_BACKEND", "auto").lower()
+ESMFOLD_LOCAL_FILES_ONLY = os.getenv("PEPTIDE_HELPER_ESMFOLD_LOCAL_FILES_ONLY", "1") != "0"
+MODEL_TIMEOUT_SECONDS = int(os.getenv("PEPTIDE_HELPER_MODEL_TIMEOUT", "120"))
+
+TOXICITY_MODEL_SPECS = (
+    {
+        "name": "ToxinPred3",
+        "task": "toxicity",
+        "weight": 1.4,
+        "source": "Computers in Biology and Medicine 2024; GitHub raghavagps/toxinpred3",
+        "command_env": "PEPTIDE_HELPER_TOXINPRED3_CMD",
+    },
+    {
+        "name": "ToxinPred2",
+        "task": "toxicity",
+        "weight": 1.3,
+        "source": "Briefings in Bioinformatics 2022; GitHub raghavagps/toxinpred2",
+        "command_env": "PEPTIDE_HELPER_TOXINPRED2_CMD",
+    },
+    {
+        "name": "ToxIBTL",
+        "task": "toxicity",
+        "weight": 1.15,
+        "source": "Bioinformatics 2022; GitHub WLYLab/ToxIBTL",
+        "command_env": "PEPTIDE_HELPER_TOXIBTL_CMD",
+    },
+    {
+        "name": "ToxTeller",
+        "task": "toxicity",
+        "weight": 1.0,
+        "source": "ACS Omega 2024; GitHub comics-asiis/ToxicPeptidePrediction",
+        "command_env": "PEPTIDE_HELPER_TOXTELLER_CMD",
+    },
+    {
+        "name": "SafetyExtension",
+        "task": "safety",
+        "weight": 0.7,
+        "source": "Optional allergenicity, immunogenicity, or hemolysis predictor",
+        "command_env": "PEPTIDE_HELPER_SAFETY_EXTENSION_CMD",
+    },
+)
+
+ACTIVITY_MODEL_SPECS = (
+    {
+        "name": "AMPScannerV2",
+        "task": "antimicrobial_activity",
+        "weight": 1.3,
+        "source": "Bioinformatics 2018; GitHub dan-veltri/amp-scanner-v2",
+        "command_env": "PEPTIDE_HELPER_AMPSCANNER_CMD",
+    },
+    {
+        "name": "AMPlify",
+        "task": "antimicrobial_activity",
+        "weight": 1.3,
+        "source": "BMC Genomics 2022; GitHub BirolLab/AMPlify",
+        "command_env": "PEPTIDE_HELPER_AMPLIFY_CMD",
+    },
+    {
+        "name": "amPEPpy",
+        "task": "antimicrobial_activity",
+        "weight": 1.0,
+        "source": "Bioinformatics 2020; GitHub tlawrence3/amPEPpy",
+        "command_env": "PEPTIDE_HELPER_AMPEPPY_CMD",
+    },
+    {
+        "name": "iAMPCN",
+        "task": "multi_activity",
+        "weight": 1.1,
+        "source": "Briefings in Bioinformatics 2023; GitHub joy50706/iAMPCN",
+        "command_env": "PEPTIDE_HELPER_IAMPCN_CMD",
+    },
+    {
+        "name": "Deep-AmPEP30",
+        "task": "short_peptide_antimicrobial_activity",
+        "weight": 0.9,
+        "source": "Molecular Therapy - Nucleic Acids 2020",
+        "command_env": "PEPTIDE_HELPER_DEEP_AMPEP30_CMD",
+    },
+)
 
 
 def _log_agent(agent_name: str) -> None:
     """统一节点日志，便于后续接入结构化日志。"""
 
     print(f"[Agent] {agent_name} 执行中...")
+
+
+def _unavailable_evidence(spec: dict, reason: str) -> ModelEvidence:
+    return ModelEvidence(
+        name=spec["name"],
+        task=spec["task"],
+        weight=spec["weight"],
+        status="unavailable",
+        source=spec["source"],
+        error=reason,
+    )
+
+
+def _parse_model_payload(spec: dict, output: str) -> ModelEvidence:
+    payload = json.loads(output)
+    if not isinstance(payload, dict):
+        raise ValueError("prediction payload must be an object")
+    if "label" not in payload and "prediction" not in payload and "score" not in payload and "probability" not in payload:
+        raise ValueError("missing prediction payload")
+    label = str(payload.get("label", payload.get("prediction", "unknown"))).lower()
+    score = payload.get("score", payload.get("probability"))
+    return ModelEvidence(
+        name=spec["name"],
+        task=spec["task"],
+        label=label,
+        score=float(score) if score is not None else None,
+        weight=spec["weight"],
+        status="available",
+        source=payload.get("source") or spec["source"],
+    )
+
+
+def _run_configured_model(spec: dict, sequence: str) -> ModelEvidence:
+    command_template = os.getenv(spec["command_env"], "").strip()
+    if not command_template:
+        return _unavailable_evidence(spec, f"未配置 {spec['command_env']}")
+
+    command = shlex.split(command_template.replace("{sequence}", sequence))
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=MODEL_TIMEOUT_SECONDS,
+        )
+        return _parse_model_payload(spec, completed.stdout.strip())
+    except (json.JSONDecodeError, ValueError):
+        return _unavailable_evidence(spec, "模型命令未输出有效 JSON")
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        return _unavailable_evidence(spec, exc.__class__.__name__)
+
+
+def _toxicity_proxy(sequence: str) -> ModelEvidence:
+    residues = Counter(sequence)
+    hydrophobic = sum(residues[aa] for aa in "AILMFWVY")
+    cationic = sum(residues[aa] for aa in "KRH")
+    cysteine = residues["C"]
+    length = max(len(sequence), 1)
+    score = (
+        0.25
+        + 0.35 * hydrophobic / length
+        + 0.2 * cationic / length
+        + 0.2 * min(cysteine / 2, 1)
+    )
+    score = round(min(max(score, 0.0), 1.0), 3)
+    return ModelEvidence(
+        name="BuiltinToxicityProxy",
+        task="toxicity",
+        label="toxic" if score >= 0.55 else "non_toxic",
+        score=score,
+        weight=0.35,
+        status="proxy",
+        source="内置低权重启发式，只用于外部模型缺失时保持流程可运行",
+    )
+
+
+def _activity_proxy(sequence: str) -> ModelEvidence:
+    residues = Counter(sequence)
+    hydrophobic = sum(residues[aa] for aa in "AILMFWVY")
+    cationic = sum(residues[aa] for aa in "KRH")
+    acidic = sum(residues[aa] for aa in "DE")
+    length = max(len(sequence), 1)
+    charge_bias = max(cationic - acidic, 0) / length
+    amphipathic_proxy = min((hydrophobic / length) * 1.7, 1.0)
+    score = round(min(0.15 + 0.45 * charge_bias + 0.4 * amphipathic_proxy, 1.0), 3)
+    return ModelEvidence(
+        name="BuiltinActivityProxy",
+        task="antimicrobial_activity",
+        label="active" if score >= 0.55 else "inactive",
+        score=score,
+        weight=0.35,
+        status="proxy",
+        source="内置低权重启发式，只用于外部模型缺失时保持流程可运行",
+    )
+
+
+def _risk_score(evidence: ModelEvidence) -> float | None:
+    if evidence.score is None:
+        if evidence.label in {"toxic", "active", "amp", "positive", "yes", "1"}:
+            return 1.0
+        if evidence.label in {"non_toxic", "nontoxic", "inactive", "non_amp", "negative", "no", "0"}:
+            return 0.0
+        return None
+
+    score = evidence.score
+    if evidence.label in {"non_toxic", "nontoxic", "inactive", "non_amp", "negative", "no", "0"}:
+        return 1.0 - score if score > 0.5 else score
+    return score
+
+
+def _weighted_consensus(model_results: list[ModelEvidence]) -> tuple[float, str, str]:
+    usable = [item for item in model_results if item.status in {"available", "proxy"}]
+    scored = [(item, _risk_score(item)) for item in usable]
+    scored = [(item, score) for item, score in scored if score is not None]
+    if not scored:
+        return 0.0, "insufficient_models", "没有可用模型证据。"
+
+    weight_sum = sum(item.weight for item, _score in scored)
+    score = sum(item.weight * score for item, score in scored) / weight_sum
+    high = sum(1 for _item, item_score in scored if item_score >= 0.55)
+    low = sum(1 for _item, item_score in scored if item_score < 0.45)
+    available_count = sum(1 for item in usable if item.status == "available")
+
+    if len(scored) < 3 or available_count == 0:
+        consensus = "insufficient_models"
+    elif high == len(scored) or low == len(scored):
+        consensus = "strong_agreement"
+    elif high and low:
+        consensus = "conflict"
+    else:
+        consensus = "moderate_agreement"
+
+    summary = (
+        f"可用模型 {available_count} 个，参与综合证据 {len(scored)} 个；"
+        f"高风险/高活性证据 {high} 个，低风险/低活性证据 {low} 个。"
+    )
+    return round(score, 3), consensus, summary
+
+
+def _collect_model_evidence(specs: tuple[dict, ...], sequence: str) -> list[ModelEvidence]:
+    return [_run_configured_model(spec, sequence) for spec in specs]
 
 
 def _fold_sequence_with_esm_atlas(sequence: str) -> tuple[str, str]:
@@ -55,7 +279,15 @@ def _load_local_esmfold_model():
     from transformers import EsmForProteinFolding
 
     device = _select_esmfold_device()
-    model = EsmForProteinFolding.from_pretrained(LOCAL_ESMFOLD_MODEL)
+    if ESMFOLD_LOCAL_FILES_ONLY:
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+        os.environ.setdefault("DISABLE_SAFETENSORS_CONVERSION", "1")
+    model = EsmForProteinFolding.from_pretrained(
+        LOCAL_ESMFOLD_MODEL,
+        local_files_only=ESMFOLD_LOCAL_FILES_ONLY,
+        use_safetensors=False,
+    )
     model = model.eval().to(device)
     return model, device
 
@@ -285,12 +517,44 @@ def phys_chem_node(_state: PeptideState) -> dict:
 
 def toxicity_node(_state: PeptideState) -> dict:
     _log_agent("☠️ 毒性专家")
-    return {"toxicity_res": ToxicityResult(is_toxic=False, score=0.15)}
+    sequence = _state.get("sequence", "").strip().upper()
+    model_results = _collect_model_evidence(TOXICITY_MODEL_SPECS, sequence)
+    model_results.append(_toxicity_proxy(sequence))
+    score, consensus_level, evidence_summary = _weighted_consensus(model_results)
+    return {
+        "toxicity_res": ToxicityResult(
+            is_toxic=score >= 0.55,
+            score=score,
+            consensus_level=consensus_level,
+            evidence_summary=evidence_summary,
+            model_results=model_results,
+        )
+    }
 
 
 def activity_node(_state: PeptideState) -> dict:
     _log_agent("⚔️ 活性专家")
-    return {"activity_res": ActivityResult(antimicrobial_score=0.88)}
+    sequence = _state.get("sequence", "").strip().upper()
+    model_results = _collect_model_evidence(ACTIVITY_MODEL_SPECS, sequence)
+
+    if len(sequence) > 30:
+        model_results = [
+            item.model_copy(update={"status": "skipped", "error": "序列长度超过 30 aa"})
+            if item.name == "Deep-AmPEP30"
+            else item
+            for item in model_results
+        ]
+
+    model_results.append(_activity_proxy(sequence))
+    score, consensus_level, evidence_summary = _weighted_consensus(model_results)
+    return {
+        "activity_res": ActivityResult(
+            antimicrobial_score=score,
+            consensus_level=consensus_level,
+            evidence_summary=evidence_summary,
+            model_results=model_results,
+        )
+    }
 
 
 def esmfold_node(state: PeptideState) -> dict:
