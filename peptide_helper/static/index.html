@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peptide Helper - 多肽分析平台</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+  
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .header p { color: var(--text-secondary); font-size: 0.95rem; }
+
+  /* Card */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+  .card-title .icon { font-size: 1.3rem; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  textarea, input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+    resize: vertical;
+    transition: border-color 0.2s;
+    background: #fafbfc;
+    color: var(--text);
+  }
+  textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    background: #fff;
+  }
+  textarea { min-height: 80px; }
+  .hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 20px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-outline {
+    background: #fff;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+  .btn-outline:hover { background: #f5f3ff; }
+
+  /* Status */
+  .status-bar {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: none;
+    font-size: 0.9rem;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-bar.active { display: flex; }
+  .status-bar.running { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .status-bar.done { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .status-bar.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Progress steps */
+  .steps { display: flex; gap: 0; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px; }
+  .step {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-bottom: 3px solid var(--border);
+    white-space: nowrap;
+  }
+  .step.completed { color: var(--success); border-color: var(--success); }
+  .step.active { color: var(--accent); border-color: var(--accent); }
+
+  /* Result tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .tab {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Report */
+  .report {
+    white-space: pre-wrap;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .report.empty { color: var(--text-secondary); font-style: italic; }
+
+  /* Evidence table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-success { background: #d1fae5; color: #065f46; }
+  .badge-warning { background: #fef3c7; color: #92400e; }
+  .badge-danger { background: #fee2e2; color: #991b1b; }
+  .badge-info { background: #dbeafe; color: #1e40af; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  @media (max-width: 640px) {
+    .container { padding: 16px 12px; }
+    .header h1 { font-size: 1.5rem; }
+    .btn-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>🧬 Peptide Helper</h1>
+    <p>多智能体驱动的多肽序列分析平台 — 评估毒性、活性、结构与理化性质</p>
+  </div>
+
+  <!-- Input Form -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📋</span> 分析输入</div>
+    <div class="form-group">
+      <label>输入多肽序列和分析需求（模型自动区分）</label>
+      <textarea id="userInput" placeholder="可以自由输入序列和分析需求，例如：
+
+ACDEFGHIKLMNPQRSTVWY 帮我评估抗菌活性和毒性
+
+或者 FASTA 格式：
+>pep1
+ACDEFGHIKLMNPQRSTVWY
+>pep2
+KLMWYACDE
+评估上面两条序列的成药性" style="min-height:140px;">ACDEFGHIKLMNPQRSTVWY 帮我评估这条序列的抗菌活性和毒性风险</textarea>
+      <div class="hint">支持纯序列、自然语言需求、FASTA 格式，模型自动提取序列并理解意图</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnAnalyze" onclick="startAnalysis()">🔬 开始分析</button>
+      <button class="btn btn-primary" id="btnStream" onclick="startStreamAnalysis()" style="background:#8b5cf6;">📡 流式分析</button>
+      <button class="btn btn-outline" onclick="clearResults()">🗑 清空结果</button>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="steps" id="stepsContainer" style="display:none;">
+    <div class="step" data-step="planner_node">📝 Planner</div>
+    <div class="step" data-step="phys_chem_node">⚗️ 理化性质</div>
+    <div class="step" data-step="toxicity_node">☠️ 毒性预测</div>
+    <div class="step" data-step="activity_node">💊 活性评估</div>
+    <div class="step" data-step="esmfold_node">🔬 结构预测</div>
+    <div class="step" data-step="pepcore_node">🧠 结果聚合</div>
+    <div class="step" data-step="text1_node">📊 报告生成</div>
+    <div class="step" data-step="text2_node">✅ 最终输出</div>
+  </div>
+
+  <!-- Results -->
+  <div class="card" id="resultsCard" style="display:none;">
+    <div class="tabs" id="tabs"></div>
+    <div id="tabContents"></div>
+  </div>
+</div>
+
+<script>
+const STEP_NAMES = {
+  planner_node: '📝 Planner',
+  phys_chem_node: '⚗️ 理化性质',
+  toxicity_node: '☠️ 毒性预测',
+  activity_node: '💊 活性评估',
+  esmfold_node: '🔬 结构预测',
+  pepcore_node: '🧠 结果聚合',
+  text1_node: '📊 报告生成',
+  text2_node: '✅ 最终输出',
+};
+
+let completedSteps = new Set();
+
+function showStatus(type, text, showSpinner = false) {
+  const bar = document.getElementById('statusBar');
+  bar.className = `status-bar active ${type}`;
+  bar.querySelector('#statusText').textContent = text;
+  bar.querySelector('#spinner').style.display = showSpinner ? 'block' : 'none';
+}
+
+function hideStatus() {
+  document.getElementById('statusBar').classList.remove('active');
+}
+
+function markStep(stepName) {
+  completedSteps.add(stepName);
+  const stepsContainer = document.getElementById('stepsContainer');
+  stepsContainer.style.display = 'flex';
+  document.querySelectorAll('.step').forEach(el => {
+    const s = el.dataset.step;
+    if (completedSteps.has(s)) el.classList.add('completed');
+    if (s === stepName) {
+      el.classList.remove('active');
+      el.classList.add('completed');
+    }
+  });
+  // Activate next
+  const stepOrder = Object.keys(STEP_NAMES);
+  const lastCompletedIdx = stepOrder.findLastIndex(s => completedSteps.has(s));
+  const nextStep = stepOrder[lastCompletedIdx + 1];
+  document.querySelectorAll('.step').forEach(el => {
+    if (el.dataset.step === nextStep) el.classList.add('active');
+  });
+}
+
+function setButtonsDisabled(disabled) {
+  document.getElementById('btnAnalyze').disabled = disabled;
+  document.getElementById('btnStream').disabled = disabled;
+}
+
+function getUserInput() {
+  return document.getElementById('userInput').value.trim();
+}
+
+function validateInput(input) {
+  if (!input) {
+    showStatus('error', '请输入多肽序列和分析需求', false);
+    return false;
+  }
+  if (input.length < 2) {
+    showStatus('error', '输入太短，请提供完整的多肽序列和分析需求', false);
+    return false;
+  }
+  return true;
+}
+
+async function startAnalysis() {
+  const userInput = getUserInput();
+  if (!validateInput(userInput)) return;
+
+  completedSteps.clear();
+  setButtonsDisabled(true);
+  showStatus('running', '分析中...', true);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_input: userInput }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    showStatus('done', '分析完成！', false);
+    renderResults(data);
+  } catch (e) {
+    showStatus('error', `分析失败: ${e.message}`, false);
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+async function startStreamAnalysis() {
+  const userInput = getUserInput();
+  if (!validateInput(userInput)) return;
+
+  completedSteps.clear();
+  setButtonsDisabled(true);
+  showStatus('running', '流式分析中...', true);
+  document.getElementById('stepsContainer').style.display = 'flex';
+  // Activate first step
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'completed'));
+  document.querySelector('.step[data-step="planner_node"]')?.classList.add('active');
+
+  let finalData = null;
+
+  try {
+    const res = await fetch('/api/analyze/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_input: userInput }),
+    });
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // Parse SSE events
+      const lines = value.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith('event:')) {
+          const eventType = line.substring(6).trim();
+          if (i + 1 < lines.length && lines[i + 1].startsWith('data:')) {
+            const dataStr = lines[i + 1].substring(5).trim();
+            i++;
+
+            if (eventType === 'step') {
+              try {
+                const step = JSON.parse(dataStr);
+                markStep(step.step);
+                showStatus('running', `执行中: ${STEP_NAMES[step.step] || step.step}`, true);
+              } catch (e) { /* ignore */ }
+            } else if (eventType === 'done') {
+              finalData = dataStr ? JSON.parse(dataStr) : {};
+            } else if (eventType === 'error') {
+              const err = JSON.parse(dataStr);
+              throw new Error(err.error);
+            }
+          }
+        }
+      }
+    }
+
+    // After stream ends, do a final fetch to get the complete result
+    if (finalData === null) {
+      const finalRes = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_input: userInput }),
+      });
+      if (finalRes.ok) finalData = await finalRes.json();
+    }
+
+    showStatus('done', '分析完成！', false);
+    // Mark all steps as completed
+    Object.keys(STEP_NAMES).forEach(s => markStep(s));
+    if (finalData) renderResults(finalData);
+  } catch (e) {
+    showStatus('error', `流式分析失败: ${e.message}`, false);
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+function renderResults(data) {
+  const card = document.getElementById('resultsCard');
+  card.style.display = 'block';
+
+  const tabsEl = document.getElementById('tabs');
+  const contentsEl = document.getElementById('tabContents');
+
+  let tabsHtml = '';
+  let contentsHtml = '';
+  let tabIdx = 0;
+
+  // Final report tab
+  tabsHtml += `<button class="tab active" onclick="switchTab('tab-report', this)">📄 最终报告</button>`;
+  contentsHtml += `<div class="tab-content active" id="tab-report">
+    <div class="report">${escapeHtml(data.final_report || '暂无报告')}</div>
+  </div>`;
+  tabIdx++;
+
+  // Sequence analysis tabs
+  const results = data.multi_results || [];
+  if (results.length > 0) {
+    for (const sa of results) {
+      const tabId = `tab-seq-${tabIdx}`;
+      tabsHtml += `<button class="tab" onclick="switchTab('${tabId}', this)">🔗 ${escapeHtml(sa.sequence)}</button>`;
+      contentsHtml += `<div class="tab-content" id="${tabId}">${renderSequenceAnalysis(sa)}</div>`;
+      tabIdx++;
+    }
+  }
+
+  tabsEl.innerHTML = tabsHtml;
+  contentsEl.innerHTML = contentsHtml;
+  card.scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderSequenceAnalysis(sa) {
+  let html = '';
+
+  // Toxicity
+  if (sa.toxicity_res) {
+    const t = sa.toxicity_res;
+    html += `<h4 style="margin:16px 0 8px;">☠️ 毒性预测</h4>`;
+    html += `<p><strong>是否毒性:</strong> <span class="badge ${t.is_toxic ? 'badge-danger' : 'badge-success'}">${t.is_toxic ? '有毒' : '无毒'}</span></p>`;
+    html += `<p><strong>评分:</strong> ${t.score ?? '-'} &nbsp; <strong>共识等级:</strong> ${renderConsensus(t.consensus_level)}</p>`;
+    if (t.evidence_summary) html += `<p><strong>证据摘要:</strong> ${escapeHtml(t.evidence_summary)}</p>`;
+    html += renderEvidenceTable(t.model_results);
+  }
+
+  // Activity
+  if (sa.activity_res) {
+    const a = sa.activity_res;
+    html += `<h4 style="margin:16px 0 8px;">💊 活性评估</h4>`;
+    html += `<p><strong>抗菌评分:</strong> ${a.antimicrobial_score ?? '-'} &nbsp; <strong>共识等级:</strong> ${renderConsensus(a.consensus_level)}</p>`;
+    if (a.evidence_summary) html += `<p><strong>证据摘要:</strong> ${escapeHtml(a.evidence_summary)}</p>`;
+    html += renderEvidenceTable(a.model_results);
+  }
+
+  // Structure
+  if (sa.structure_res) {
+    const s = sa.structure_res;
+    html += `<h4 style="margin:16px 0 8px;">🔬 结构预测</h4>`;
+    html += `<p><strong>PDB ID:</strong> ${escapeHtml(s.pdb_id)} &nbsp; <strong>置信度:</strong> ${s.confidence?.toFixed(3) ?? '-'}</p>`;
+    html += `<p><strong>来源:</strong> ${escapeHtml(s.source)} &nbsp; <strong>序列长度:</strong> ${s.sequence_length}</p>`;
+    html += `<p><strong>原子数:</strong> ${s.atom_count} &nbsp; <strong>残基数:</strong> ${s.residue_count}</p>`;
+    html += `<p><strong>链:</strong> ${(s.chain_ids || []).join(', ') || '-'}</p>`;
+    if (s.min_plddt !== undefined) {
+      html += `<p><strong>pLDDT:</strong> min=${s.min_plddt?.toFixed(2)} max=${s.max_plddt?.toFixed(2)}</p>`;
+    }
+    if (s.confident_fraction !== undefined) {
+      html += `<p><strong>高置信比例:</strong> ${(s.confident_fraction * 100).toFixed(1)}%</p>`;
+    }
+    html += `<p><strong>结构质量:</strong> ${escapeHtml(s.structure_quality) || '-'}</p>`;
+    if (s.chain_summaries && s.chain_summaries.length > 0) {
+      html += `<h5 style="margin:12px 0 6px;">链摘要</h5>`;
+      html += renderChainSummaries(s.chain_summaries);
+    }
+    if (s.low_confidence_regions && s.low_confidence_regions.length > 0) {
+      html += `<h5 style="margin:12px 0 6px;color:var(--warning);">⚠️ 低置信区间</h5>`;
+      html += renderLowConfRegions(s.low_confidence_regions);
+    }
+  }
+
+  // PhysChem
+  if (sa.phys_chem_res) {
+    const p = sa.phys_chem_res;
+    html += `<h4 style="margin:16px 0 8px;">⚗️ 理化性质</h4>`;
+    html += `<p><strong>分子量:</strong> ${p.mw?.toFixed(2) ?? '-'} Da &nbsp; <strong>等电点:</strong> ${p.pi?.toFixed(2) ?? '-'}</p>`;
+  }
+
+  if (!html) html = '<div class="report empty">暂无分析结果</div>';
+  return html;
+}
+
+function renderConsensus(level) {
+  const map = {
+    insufficient_models: '<span class="badge badge-warning">模型不足</span>',
+    weak: '<span class="badge badge-danger">弱</span>',
+    moderate: '<span class="badge badge-warning">中等</span>',
+    strong: '<span class="badge badge-success">强</span>',
+  };
+  return map[level] || `<span class="badge badge-info">${escapeHtml(level)}</span>`;
+}
+
+function renderEvidenceTable(models) {
+  if (!models || models.length === 0) return '';
+  let html = `<table style="margin-top:8px;">
+    <thead><tr><th>模型</th><th>任务</th><th>标签</th><th>评分</th><th>权重</th><th>状态</th></tr></thead><tbody>`;
+  for (const m of models) {
+    const statusBadge = m.status === 'available'
+      ? '<span class="badge badge-success">可用</span>'
+      : '<span class="badge badge-danger">不可用</span>';
+    html += `<tr>
+      <td>${escapeHtml(m.name)}</td>
+      <td>${escapeHtml(m.task)}</td>
+      <td><span class="badge badge-info">${escapeHtml(m.label)}</span></td>
+      <td>${m.score?.toFixed(3) ?? '-'}</td>
+      <td>${m.weight}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderChainSummaries(chains) {
+  let html = `<table><thead><tr><th>链</th><th>残基数</th><th>原子数</th><th>平均pLDDT</th><th>最小pLDDT</th><th>最大pLDDT</th></tr></thead><tbody>`;
+  for (const c of chains) {
+    html += `<tr>
+      <td>${escapeHtml(c.chain_id)}</td>
+      <td>${c.residue_count}</td>
+      <td>${c.atom_count}</td>
+      <td>${c.mean_plddt?.toFixed(2) ?? '-'}</td>
+      <td>${c.min_plddt?.toFixed(2) ?? '-'}</td>
+      <td>${c.max_plddt?.toFixed(2) ?? '-'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderLowConfRegions(regions) {
+  let html = `<table><thead><tr><th>链</th><th>起始</th><th>结束</th><th>残基数</th><th>平均pLDDT</th></tr></thead><tbody>`;
+  for (const r of regions) {
+    html += `<tr>
+      <td>${escapeHtml(r.chain_id)}</td>
+      <td>${r.start}</td>
+      <td>${r.end}</td>
+      <td>${r.residue_count}</td>
+      <td>${r.mean_plddt?.toFixed(2) ?? '-'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+function clearResults() {
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('tabs').innerHTML = '';
+  document.getElementById('tabContents').innerHTML = '';
+  document.getElementById('stepsContainer').style.display = 'none';
+  completedSteps.clear();
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'completed'));
+  hideStatus();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

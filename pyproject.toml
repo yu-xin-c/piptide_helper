@@ -14,7 +14,12 @@ dependencies = [
     "torch>=2.6.0",
     "transformers>=5.7.0",
     "accelerate>=1.13.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
 ]
+
+[project.scripts]
+piptide-server = "peptide_helper.server:main"
 
 [tool.setuptools.packages.find]
 include = ["peptide_helper*"]
