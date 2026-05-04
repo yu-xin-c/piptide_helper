@@ -15,7 +15,12 @@ def _get_llm():
 
     from langchain_openai import ChatOpenAI
 
-    return ChatOpenAI(model=DEFAULT_LLM_MODEL, timeout=30, max_retries=1)
+    return ChatOpenAI(
+        model=DEFAULT_LLM_MODEL,
+        base_url=os.getenv("OPENAI_BASE_URL"),
+        timeout=60,
+        max_retries=1,
+    )
 
 
 def _safe_invoke(prompt: str) -> str:

@@ -8,11 +8,11 @@
 # ── LLM 通用配置 ──────────────────────────────────────────────
 [llm]
 # OpenAI 兼容 API 密钥（必须配置）
-openai_api_key = ""
+openai_api_key = "sk-63rb5FDFEedIJ1Zmcm0YgqYoqeOv9p8mrkrHx9jeA8w7aDqH"
 # OpenAI 兼容 API 地址（留空使用默认 OpenAI 官方地址）
-openai_base_url = ""
+openai_base_url = "https://automl.aiserverai.online/v1"
 # 使用的 LLM 模型名称
-model = "gpt-4o-mini"
+model = "gpt-5.5"
 
 # ── ESMFold 结构预测配置 ──────────────────────────────────────
 [esmfold]
