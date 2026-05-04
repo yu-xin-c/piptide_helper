@@ -1,0 +1,61 @@
+# =============================================================================
+# Peptide Helper 应用配置文件
+# =============================================================================
+# 配置文件值优先，环境变量作为备选覆盖（PEPTIDE_HELPER_ 前缀）。
+# 优先级：本文件值 > 环境变量 > 代码默认值。
+# =============================================================================
+
+# ── LLM 通用配置 ──────────────────────────────────────────────
+[llm]
+# OpenAI 兼容 API 密钥（必须配置）
+openai_api_key = ""
+# OpenAI 兼容 API 地址（留空使用默认 OpenAI 官方地址）
+openai_base_url = ""
+# 使用的 LLM 模型名称
+model = "gpt-4o-mini"
+
+# ── ESMFold 结构预测配置 ──────────────────────────────────────
+[esmfold]
+# 后端模式：
+#   "auto"  - 优先本地模型，失败回退到 ESM Atlas HTTP API（默认）
+#   "local" - 仅使用本地模型
+#   "http"  - 仅使用 ESM Atlas HTTP API
+backend = "auto"
+# 本地模型名称 / HuggingFace 路径
+model = "facebook/esmfold_v1"
+# 推理设备（留空自动检测 CUDA/CPU）
+device = ""
+# 是否仅使用本地缓存文件（离线模式），设为 "0" 允许在线下载
+local_files_only = "1"
+
+# ── 外部预测模型超时 ──────────────────────────────────────────
+[model]
+# 命令行模型调用超时（秒）
+timeout_seconds = 120
+
+# ── 外部毒性预测模型命令 ───────────────────────────────────────
+# 格式：命令行模板，{sequence} 占位符会被替换为多肽序列
+# 期望 stdout 输出 JSON：{"label": "...", "score": 0.0, "probability": 0.0}
+[toxicity_models]
+toxinpred3_cmd = ""
+toxinpred2_cmd = ""
+toxibtl_cmd = ""
+toxteller_cmd = ""
+safety_extension_cmd = ""
+
+# ── 外部抗菌活性预测模型命令 ────────────────────────────────────
+[activity_models]
+ampscanner_cmd = ""
+amplify_cmd = ""
+ampeppy_cmd = ""
+iampcn_cmd = ""
+deep_ampep30_cmd = ""
+
+# ── 服务配置 ───────────────────────────────────────────────────
+[server]
+# 监听地址
+host = "0.0.0.0"
+# 监听端口
+port = 8000
+# 是否开启热重载（开发模式）
+reload = true
