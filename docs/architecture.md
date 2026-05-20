@@ -14,11 +14,13 @@ flowchart LR
     B --> C1[理化专家]
     B --> C2[毒性专家]
     B --> C3[活性专家]
-    B --> C4[结构专家]
+    B --> C4[神经肽专家]
+    B --> C5[结构专家]
     C1 --> D[PepCore 聚合]
     C2 --> D
     C3 --> D
     C4 --> D
+    C5 --> D
     D --> E[Text1 科学推演]
     E --> F[Text2 交付报告]
     style B fill:#bbdefb,color:#0d47a1
@@ -42,7 +44,7 @@ flowchart LR
 
 ### 3.3 专家服务层
 
-- `agents.py` 中的 4 个节点代表 4 类专业能力。
+- `agents.py` 中的 5 个节点代表 5 类专业能力。
 - 当前实现使用 Mock 数据，便于先验证编排链路。
 - 后续接入真实模型时，只需替换单个节点实现，不影响其他节点。
 
@@ -66,7 +68,7 @@ flowchart LR
 | `peptide_helper/state.py` | 状态边界 | 定义状态契约与统一初始化入口 |
 | `peptide_helper/models.py` | 数据模型 | 定义专家输出的 Pydantic 模型 |
 | `peptide_helper/nodes/planner.py` | 调度层 | 识别意图并生成执行计划 |
-| `peptide_helper/nodes/agents.py` | 专家层 | 提供并行执行的 mock 专家节点 |
+| `peptide_helper/nodes/agents.py` | 专家层 | 提供并行执行的专家节点和外部命令模型适配器 |
 | `peptide_helper/nodes/pepcore.py` | 聚合层 | 汇总专家结果，构造统一上下文 |
 | `peptide_helper/nodes/reporter.py` | 交付层 | 生成 Text1 / Text2 报告 |
 | `peptide_helper/graph.py` | 编排层 | 构建 LangGraph 拓扑与条件路由 |
@@ -177,6 +179,7 @@ Reporter 不再在节点函数里重复创建客户端与拼接降级文本：
 - 理化专家可接入序列分析工具。
 - 结构专家可对接 ESMFold 或远程结构预测服务。
 - 活性/毒性专家可接入各自分类或回归模型。
+- 神经肽专家可通过 MSKDNP 等外部命令模型补充神经肽预测维度。
 
 建议通过“适配器模式”接入外部服务，避免节点直接耦合第三方 SDK。
 

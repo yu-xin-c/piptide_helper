@@ -5,6 +5,7 @@ from langgraph.graph import END, StateGraph
 from .nodes import (
     activity_node,
     esmfold_node,
+    neuropeptide_node,
     pepcore_node,
     phys_chem_node,
     planner_node,
@@ -18,6 +19,7 @@ EXPERT_NODES: Dict[str, object] = {
     "phys_chem_node": phys_chem_node,
     "toxicity_node": toxicity_node,
     "activity_node": activity_node,
+    "neuropeptide_node": neuropeptide_node,
     "esmfold_node": esmfold_node,
 }
 

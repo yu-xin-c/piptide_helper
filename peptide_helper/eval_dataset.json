@@ -778,5 +778,53 @@
     "type": "困难-语义歧义",
     "user_request": "我说的活性不是生物活性，是化学活度；这里先算电荷。",
     "ground_truth": ["phys_chem_node"]
+  },
+  {
+    "id": "T131",
+    "type": "显式-神经肽",
+    "user_request": "判断这条序列是不是神经肽。",
+    "ground_truth": ["neuropeptide_node"]
+  },
+  {
+    "id": "T132",
+    "type": "显式-神经肽",
+    "user_request": "Run neuropeptide prediction for this peptide.",
+    "ground_truth": ["neuropeptide_node"]
+  },
+  {
+    "id": "T133",
+    "type": "组合-神经肽毒性",
+    "user_request": "评估神经肽可能性和细胞毒性风险。",
+    "ground_truth": ["neuropeptide_node", "toxicity_node"]
+  },
+  {
+    "id": "T134",
+    "type": "组合-神经肽结构",
+    "user_request": "看它是否是神经调节肽，并预测 3D 构象。",
+    "ground_truth": ["neuropeptide_node", "esmfold_node"]
+  },
+  {
+    "id": "T135",
+    "type": "显式-毒性",
+    "user_request": "估计 HC50 和 hemolysis 风险。",
+    "ground_truth": ["toxicity_node"]
+  },
+  {
+    "id": "T136",
+    "type": "显式-活性",
+    "user_request": "Check ABP probability and antibacterial target.",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T137",
+    "type": "显式-活性",
+    "user_request": "判断它是不是 anticancer peptide 或 ACP。",
+    "ground_truth": ["activity_node"]
+  },
+  {
+    "id": "T138",
+    "type": "组合-全节点",
+    "user_request": "给我理化、毒性、抗菌靶菌、神经肽可能性和三维结构的完整评估。",
+    "ground_truth": ["phys_chem_node", "toxicity_node", "activity_node", "neuropeptide_node", "esmfold_node"]
   }
 ]

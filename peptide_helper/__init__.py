@@ -72,9 +72,12 @@ def _load_config_toml():
     # ── 毒性模型命令 ──
     tox = cfg.get("toxicity_models", {})
     _maybe_setenv("PEPTIDE_HELPER_TOXINPRED3_CMD", tox.get("toxinpred3_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_TOXIPEP_CMD", tox.get("toxipep_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_TOXINPRED2_CMD", tox.get("toxinpred2_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_TOXIBTL_CMD", tox.get("toxibtl_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_TOXTELLER_CMD", tox.get("toxteller_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_HEMOPI2_CLASSIFICATION_CMD", tox.get("hemopi2_classification_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_HEMOPI2_REGRESSION_CMD", tox.get("hemopi2_regression_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_SAFETY_EXTENSION_CMD", tox.get("safety_extension_cmd"))
 
     # ── 活性模型命令 ──
@@ -84,6 +87,14 @@ def _load_config_toml():
     _maybe_setenv("PEPTIDE_HELPER_AMPEPPY_CMD", act.get("ampeppy_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_IAMPCN_CMD", act.get("iampcn_cmd"))
     _maybe_setenv("PEPTIDE_HELPER_DEEP_AMPEP30_CMD", act.get("deep_ampep30_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_AMPACTIPRED_ABP_CMD", act.get("ampactipred_abp_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_AMPACTIPRED_TARGET_CMD", act.get("ampactipred_target_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_AMPACTIPRED_ACTIVITY_LEVEL_CMD", act.get("ampactipred_activity_level_cmd"))
+    _maybe_setenv("PEPTIDE_HELPER_GRDF_ACP_CMD", act.get("grdf_acp_cmd"))
+
+    # ── 神经肽模型命令 ──
+    neuro = cfg.get("neuropeptide_models", {})
+    _maybe_setenv("PEPTIDE_HELPER_MSKDNP_CMD", neuro.get("mskdnp_cmd"))
 
 
 def _maybe_setenv(key: str, value):

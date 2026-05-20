@@ -38,9 +38,12 @@ timeout_seconds = 120
 # 期望 stdout 输出 JSON：{"label": "...", "score": 0.0, "probability": 0.0}
 [toxicity_models]
 toxinpred3_cmd = ""
+toxipep_cmd = ""
 toxinpred2_cmd = ""
 toxibtl_cmd = ""
 toxteller_cmd = ""
+hemopi2_classification_cmd = ""
+hemopi2_regression_cmd = ""
 safety_extension_cmd = ""
 
 # ── 外部抗菌活性预测模型命令 ────────────────────────────────────
@@ -50,6 +53,14 @@ amplify_cmd = ""
 ampeppy_cmd = ""
 iampcn_cmd = ""
 deep_ampep30_cmd = ""
+ampactipred_abp_cmd = ""
+ampactipred_target_cmd = ""
+ampactipred_activity_level_cmd = ""
+grdf_acp_cmd = ""
+
+# ── 外部神经肽预测模型命令 ────────────────────────────────────
+[neuropeptide_models]
+mskdnp_cmd = ""
 
 # ── 服务配置 ───────────────────────────────────────────────────
 [server]

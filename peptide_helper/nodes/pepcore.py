@@ -8,6 +8,7 @@ RESULT_SECTION_MAPPING: Tuple[Tuple[str, str], ...] = (
     ("phys_chem_res", "理化性质"),
     ("toxicity_res", "毒性预测"),
     ("activity_res", "活性评估"),
+    ("neuropeptide_res", "神经肽预测"),
     ("structure_res", "3D结构"),
 )
 

@@ -2,6 +2,7 @@ from typing import Annotated, List, Optional, TypedDict
 
 from .models import (
     ActivityResult,
+    NeuropeptideResult,
     PhysChemResult,
     SequenceAnalysis,
     StructureResult,
@@ -25,7 +26,13 @@ def merge_multi_results(
         if sa.sequence in result:
             existing = result[sa.sequence]
             merged = existing.model_dump()
-            for field in ("phys_chem_res", "toxicity_res", "activity_res", "structure_res"):
+            for field in (
+                "phys_chem_res",
+                "toxicity_res",
+                "activity_res",
+                "neuropeptide_res",
+                "structure_res",
+            ):
                 new_val = getattr(sa, field)
                 if new_val is not None:
                     merged[field] = new_val
@@ -48,6 +55,7 @@ class PeptideState(TypedDict, total=False):
     phys_chem_res: Optional[PhysChemResult]
     toxicity_res: Optional[ToxicityResult]
     activity_res: Optional[ActivityResult]
+    neuropeptide_res: Optional[NeuropeptideResult]
     structure_res: Optional[StructureResult]
 
     # --- 多序列结果（带 reducer，支持并行节点合并） ---
@@ -83,6 +91,7 @@ def create_initial_state(
         "phys_chem_res": None,
         "toxicity_res": None,
         "activity_res": None,
+        "neuropeptide_res": None,
         "structure_res": None,
         "multi_results": [],
         "pepcore_context": "",

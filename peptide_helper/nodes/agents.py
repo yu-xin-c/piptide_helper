@@ -16,6 +16,7 @@ from ..models import (
     CoordinateBounds,
     LowConfidenceRegion,
     ModelEvidence,
+    NeuropeptideResult,
     PdbAtomRecord,
     PhysChemResult,
     ResidueConfidence,
@@ -40,6 +41,17 @@ TOXICITY_MODEL_SPECS = (
         "command_env": "PEPTIDE_HELPER_TOXINPRED3_CMD",
     },
     {
+        "name": "ToxiPep",
+        "task": "toxicity",
+        "endpoint": "peptide_toxicity",
+        "metric": "toxicity_probability",
+        "weight": 1.45,
+        "source": "Computational and Structural Biotechnology Journal 2025",
+        "repo_url": "https://github.com/GGCL7/ToxiPep",
+        "paper_url": "https://doi.org/10.1016/j.csbj.2025.05.039",
+        "command_env": "PEPTIDE_HELPER_TOXIPEP_CMD",
+    },
+    {
         "name": "ToxinPred2",
         "task": "toxicity",
         "weight": 1.3,
@@ -59,6 +71,29 @@ TOXICITY_MODEL_SPECS = (
         "weight": 1.0,
         "source": "ACS Omega 2024; GitHub comics-asiis/ToxicPeptidePrediction",
         "command_env": "PEPTIDE_HELPER_TOXTELLER_CMD",
+    },
+    {
+        "name": "HemoPI2Classification",
+        "task": "hemolysis",
+        "endpoint": "hemolytic_peptide",
+        "metric": "hemolysis_probability",
+        "weight": 1.35,
+        "source": "Communications Biology 2025",
+        "repo_url": "https://github.com/raghavagps/HemoPI2",
+        "paper_url": "https://doi.org/10.1038/s42003-025-07615-w",
+        "command_env": "PEPTIDE_HELPER_HEMOPI2_CLASSIFICATION_CMD",
+    },
+    {
+        "name": "HemoPI2Regression",
+        "task": "hemolysis",
+        "endpoint": "hc50",
+        "metric": "hc50",
+        "unit": "uM",
+        "weight": 1.1,
+        "source": "Communications Biology 2025",
+        "repo_url": "https://github.com/raghavagps/HemoPI2",
+        "paper_url": "https://doi.org/10.1038/s42003-025-07615-w",
+        "command_env": "PEPTIDE_HELPER_HEMOPI2_REGRESSION_CMD",
     },
     {
         "name": "SafetyExtension",
@@ -105,6 +140,64 @@ ACTIVITY_MODEL_SPECS = (
         "source": "Molecular Therapy - Nucleic Acids 2020",
         "command_env": "PEPTIDE_HELPER_DEEP_AMPEP30_CMD",
     },
+    {
+        "name": "AMPActiPredABP",
+        "task": "antimicrobial_activity",
+        "endpoint": "antibacterial_peptide",
+        "metric": "abp_probability",
+        "weight": 1.35,
+        "source": "Protein Science 2024",
+        "repo_url": "https://github.com/lantianyao/AMPActiPred",
+        "paper_url": "https://doi.org/10.1002/pro.5006",
+        "command_env": "PEPTIDE_HELPER_AMPACTIPRED_ABP_CMD",
+    },
+    {
+        "name": "AMPActiPredTarget",
+        "task": "antimicrobial_target",
+        "endpoint": "bacterial_target",
+        "metric": "target_confidence",
+        "weight": 1.0,
+        "source": "Protein Science 2024",
+        "repo_url": "https://github.com/lantianyao/AMPActiPred",
+        "paper_url": "https://doi.org/10.1002/pro.5006",
+        "command_env": "PEPTIDE_HELPER_AMPACTIPRED_TARGET_CMD",
+    },
+    {
+        "name": "AMPActiPredActivityLevel",
+        "task": "antimicrobial_activity_level",
+        "endpoint": "activity_level",
+        "metric": "activity_level_score",
+        "weight": 1.0,
+        "source": "Protein Science 2024",
+        "repo_url": "https://github.com/lantianyao/AMPActiPred",
+        "paper_url": "https://doi.org/10.1002/pro.5006",
+        "command_env": "PEPTIDE_HELPER_AMPACTIPRED_ACTIVITY_LEVEL_CMD",
+    },
+    {
+        "name": "GRDF_ACP",
+        "task": "anticancer_activity",
+        "endpoint": "anticancer_peptide",
+        "metric": "acp_probability",
+        "weight": 1.2,
+        "source": "International Journal of Molecular Sciences 2023",
+        "repo_url": "https://github.com/lantianyao/GRDF",
+        "paper_url": "https://doi.org/10.3390/ijms24054328",
+        "command_env": "PEPTIDE_HELPER_GRDF_ACP_CMD",
+    },
+)
+
+NEUROPEPTIDE_MODEL_SPECS = (
+    {
+        "name": "MSKDNP",
+        "task": "neuropeptide",
+        "endpoint": "neuropeptide_prediction",
+        "metric": "neuropeptide_probability",
+        "weight": 1.4,
+        "source": "Briefings in Bioinformatics 2025",
+        "repo_url": "https://github.com/Cpillar/MSKDNP",
+        "paper_url": "https://doi.org/10.1093/bib/bbaf466",
+        "command_env": "PEPTIDE_HELPER_MSKDNP_CMD",
+    },
 )
 
 
@@ -130,9 +223,14 @@ def _unavailable_evidence(spec: dict, reason: str) -> ModelEvidence:
     return ModelEvidence(
         name=spec["name"],
         task=spec["task"],
+        endpoint=spec.get("endpoint", ""),
+        metric=spec.get("metric", ""),
+        unit=spec.get("unit", ""),
         weight=spec["weight"],
         status="unavailable",
         source=spec["source"],
+        repo_url=spec.get("repo_url", ""),
+        paper_url=spec.get("paper_url", ""),
         error=reason,
     )
 
@@ -148,11 +246,17 @@ def _parse_model_payload(spec: dict, output: str) -> ModelEvidence:
     return ModelEvidence(
         name=spec["name"],
         task=spec["task"],
+        endpoint=str(payload.get("endpoint", spec.get("endpoint", ""))),
+        metric=str(payload.get("metric", spec.get("metric", ""))),
+        unit=str(payload.get("unit", spec.get("unit", ""))),
         label=label,
         score=float(score) if score is not None else None,
         weight=spec["weight"],
         status="available",
         source=payload.get("source") or spec["source"],
+        repo_url=payload.get("repo_url") or spec.get("repo_url", ""),
+        paper_url=payload.get("paper_url") or spec.get("paper_url", ""),
+        raw_output=payload.get("raw_output", payload),
     )
 
 
@@ -222,15 +326,42 @@ def _activity_proxy(sequence: str) -> ModelEvidence:
 
 
 def _risk_score(evidence: ModelEvidence) -> float | None:
+    positive_labels = {
+        "toxic",
+        "hemolytic",
+        "active",
+        "amp",
+        "abp",
+        "acp",
+        "anticancer",
+        "neuropeptide",
+        "positive",
+        "yes",
+        "1",
+    }
+    negative_labels = {
+        "non_toxic",
+        "nontoxic",
+        "non_hemolytic",
+        "nonhemolytic",
+        "inactive",
+        "non_amp",
+        "non_abp",
+        "non_acp",
+        "non_neuropeptide",
+        "negative",
+        "no",
+        "0",
+    }
     if evidence.score is None:
-        if evidence.label in {"toxic", "active", "amp", "positive", "yes", "1"}:
+        if evidence.label in positive_labels:
             return 1.0
-        if evidence.label in {"non_toxic", "nontoxic", "inactive", "non_amp", "negative", "no", "0"}:
+        if evidence.label in negative_labels:
             return 0.0
         return None
 
     score = evidence.score
-    if evidence.label in {"non_toxic", "nontoxic", "inactive", "non_amp", "negative", "no", "0"}:
+    if evidence.label in negative_labels:
         return 1.0 - score if score > 0.5 else score
     return score
 
@@ -625,6 +756,32 @@ def activity_node(state: PeptideState) -> dict:
             first_result = act_res
 
     result = {"activity_res": first_result}
+    if multi:
+        result["multi_results"] = multi
+    return result
+
+
+def neuropeptide_node(state: PeptideState) -> dict:
+    _log_agent("🧠 神经肽专家")
+    sequences = _get_sequences(state)
+
+    multi = []
+    first_result = None
+    for seq in sequences:
+        model_results = _collect_model_evidence(NEUROPEPTIDE_MODEL_SPECS, seq)
+        score, consensus_level, evidence_summary = _weighted_consensus(model_results)
+        neuro_res = NeuropeptideResult(
+            is_neuropeptide=score >= 0.55,
+            score=score,
+            consensus_level=consensus_level,
+            evidence_summary=evidence_summary,
+            model_results=model_results,
+        )
+        multi.append(SequenceAnalysis(sequence=seq, neuropeptide_res=neuro_res))
+        if first_result is None:
+            first_result = neuro_res
+
+    result = {"neuropeptide_res": first_result}
     if multi:
         result["multi_results"] = multi
     return result

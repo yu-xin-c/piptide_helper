@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -8,11 +8,17 @@ class ModelEvidence(BaseModel):
 
     name: str
     task: str
+    endpoint: str = ""
+    metric: str = ""
+    unit: str = ""
     label: str = "unknown"
     score: float | None = None
     weight: float = 1.0
     status: str = "available"
     source: str = ""
+    repo_url: str = ""
+    paper_url: str = ""
+    raw_output: Any = None
     error: str = ""
 
 
@@ -32,6 +38,15 @@ class ToxicityResult(BaseModel):
 class ActivityResult(BaseModel):
     """活性评估返回结果模型"""
     antimicrobial_score: float
+    consensus_level: str = "insufficient_models"
+    evidence_summary: str = ""
+    model_results: list[ModelEvidence] = Field(default_factory=list)
+
+
+class NeuropeptideResult(BaseModel):
+    """神经肽预测返回结果模型"""
+    is_neuropeptide: bool
+    score: float
     consensus_level: str = "insufficient_models"
     evidence_summary: str = ""
     model_results: list[ModelEvidence] = Field(default_factory=list)
@@ -160,4 +175,5 @@ class SequenceAnalysis(BaseModel):
     phys_chem_res: Optional[PhysChemResult] = None
     toxicity_res: Optional[ToxicityResult] = None
     activity_res: Optional[ActivityResult] = None
+    neuropeptide_res: Optional[NeuropeptideResult] = None
     structure_res: Optional[StructureResult] = None
